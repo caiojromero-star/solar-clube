@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="format-detection" content="telephone=no">
+<title>Cadastro — Solar Clube</title>
+<meta name="description" content="Cadastro de clubistas e alunos do Solar Clube para cobrança por Pix e acesso pela catraca.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../estilo.css">
+</head>
+<body>
+<main class="pagina">
+  <div class="topo">
+    <svg class="seta" viewBox="0 0 150 150" aria-hidden="true"><polygon fill="#FEB705" points="0,0 72,0 47,25 150,128 128,150 25,47 0,72"/></svg>
+    <div class="logo"><img src="../logo-solar.jpg" alt="Solar Clube"></div>
+  </div>
+
+  <section id="tela-form">
+    <h1 class="titulo">BEM-VINDO AO SOLAR</h1>
+    <div class="titulo faixa">FAÇA SEU CADASTRO</div>
+    <p class="intro">Preencha seus dados para receber suas cobranças pelo WhatsApp e manter seu acesso liberado na catraca. Leva 1 minuto.</p>
+
+    <form id="form-cadastro" novalidate>
+      <div class="armadilha" aria-hidden="true">
+        <label for="site">Não preencha</label>
+        <input type="text" id="site" name="site" tabindex="-1" autocomplete="off">
+      </div>
+
+      <div class="campo" id="c-nome">
+        <label for="nome">Nome completo</label>
+        <input type="text" id="nome" autocomplete="name" maxlength="120" required>
+        <div class="erro-campo">Digite seu nome completo.</div>
+      </div>
+
+      <div class="campo" id="c-cpf">
+        <label for="cpf">CPF</label>
+        <input type="text" id="cpf" inputmode="numeric" placeholder="000.000.000-00" maxlength="14" required>
+        <div class="erro-campo">CPF inválido. Confira os números.</div>
+      </div>
+
+      <div class="campo" id="c-celular">
+        <label for="celular">Celular / WhatsApp com DDD</label>
+        <input type="tel" id="celular" inputmode="numeric" autocomplete="tel-national" placeholder="(19) 99999-9999" maxlength="15" required>
+        <div class="erro-campo">Digite o celular com DDD.</div>
+      </div>
+
+      <div class="campo" id="c-email">
+        <label for="email">E-mail <span class="opcional">(opcional)</span></label>
+        <input type="email" id="email" autocomplete="email" maxlength="200">
+        <div class="erro-campo">E-mail inválido.</div>
+      </div>
+
+      <div class="campo" id="c-nascimento">
+        <label for="nascimento">Data de nascimento</label>
+        <input type="date" id="nascimento" min="1920-01-01" required>
+        <div class="erro-campo">Informe sua data de nascimento.</div>
+      </div>
+
+      <div class="campo" id="c-tipo">
+        <label>Como você usa o Solar?</label>
+        <div class="opcoes">
+          <label class="opcao"><input type="radio" name="tipo" value="clubista"> Clubista — plano mensal de R$ 55 para jogar livre</label>
+          <label class="opcao"><input type="radio" name="tipo" value="aluno"> Aluno de aula — R$ 205/mês, 4 aulas</label>
+          <label class="opcao"><input type="radio" name="tipo" value="clubista_aluno"> Clubista e aluno de aula</label>
+        </div>
+        <div class="erro-campo">Escolha uma opção.</div>
+      </div>
+
+      <div class="campo escondido" id="c-professor">
+        <label for="professor">Nome do seu professor <span class="opcional">(opcional)</span></label>
+        <input type="text" id="professor" maxlength="120">
+      </div>
+
+      <div class="campo" id="c-rosto">
+        <label>Seu rosto já está cadastrado na catraca?</label>
+        <div class="opcoes">
+          <label class="opcao"><input type="radio" name="rosto" value="sim"> Sim</label>
+          <label class="opcao"><input type="radio" name="rosto" value="nao"> Não</label>
+          <label class="opcao"><input type="radio" name="rosto" value="nao_sei"> Não sei</label>
+        </div>
+        <div class="erro-campo">Escolha uma opção.</div>
+      </div>
+
+      <div class="campo" id="c-regulamento">
+        <label class="opcao aceite"><input type="checkbox" id="regulamento"> Li e aceito o Regulamento do Solar Clube.</label>
+        <div class="dica">Quer uma cópia? Peça pelo WhatsApp (19) 99433-5341.</div>
+        <div class="erro-campo">É preciso aceitar o regulamento.</div>
+      </div>
+
+      <div class="campo" id="c-lgpd">
+        <label class="opcao aceite"><input type="checkbox" id="lgpd"> Autorizo o Solar Clube a usar meus dados (nome, CPF, celular e e-mail) para emissão de cobranças e controle de acesso, conforme a LGPD.</label>
+        <div class="erro-campo">É preciso autorizar o uso dos dados.</div>
+      </div>
+
+      <div class="aviso" id="aviso"></div>
+      <button type="submit" class="enviar" id="btn-enviar">ENVIAR CADASTRO</button>
+    </form>
+  </section>
+
+  <section id="tela-ok" class="sucesso escondido">
+    <div class="check">✓</div>
+    <h1 class="titulo">CADASTRO RECEBIDO!</h1>
+    <p class="intro" style="margin-top:12px">Em breve você recebe suas cobranças pelo WhatsApp. Bom jogo!</p>
+  </section>
+
+  <p class="rodape">Dúvidas? WhatsApp do suporte: <a href="https://wa.me/5519994335341">(19) 99433-5341</a><br>Solar Clube · Mogi Mirim/SP</p>
+</main>
+
+<script>
+  // Grava direto na tabela "cadastros" do Supabase do Solar com a chave pública.
+  // O banco só aceita INSERIR (RLS): ninguém consegue ler ou mudar cadastros por aqui.
+  var SUPABASE_URL = 'https://wpmsbzfwobodcqxkbacw.supabase.co';
+  var SUPABASE_CHAVE_PUBLICA = 'sb_publishable_1QUirZF5fXtURr-qWuM2yQ_yfKVVhTd';
+
+  function soDigitos(v) { return (v || '').replace(/\D/g, ''); }
+
+  function cpfValido(cpf) {
+    cpf = soDigitos(cpf);
+    if (cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf)) return false;
+    for (var t = 9; t < 11; t++) {
+      var soma = 0;
+      for (var i = 0; i < t; i++) soma += Number(cpf[i]) * (t + 1 - i);
+      var dig = ((soma * 10) % 11) % 10;
+      if (dig !== Number(cpf[t])) return false;
+    }
+    return true;
+  }
+
+  function mascaraCpf(v) {
+    var d = soDigitos(v).slice(0, 11);
+    return d.replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+  }
+
+  function mascaraCelular(v) {
+    var d = soDigitos(v).slice(0, 11);
+    if (d.length <= 2) return d.length ? '(' + d : '';
+    if (d.length <= 6) return '(' + d.slice(0, 2) + ') ' + d.slice(2);
+    if (d.length <= 10) return '(' + d.slice(0, 2) + ') ' + d.slice(2, 6) + '-' + d.slice(6);
+    return '(' + d.slice(0, 2) + ') ' + d.slice(2, 7) + '-' + d.slice(7);
+  }
+
+  var el = function (id) { return document.getElementById(id); };
+  el('cpf').addEventListener('input', function () { this.value = mascaraCpf(this.value); });
+  el('celular').addEventListener('input', function () { this.value = mascaraCelular(this.value); });
+  el('nascimento').max = new Date().toISOString().slice(0, 10);
+
+  document.querySelectorAll('input[name="tipo"]').forEach(function (r) {
+    r.addEventListener('change', function () {
+      el('c-professor').classList.toggle('escondido', this.value === 'clubista');
+    });
+  });
+
+  function marcar(idCampo, invalido) { el(idCampo).classList.toggle('invalido', invalido); return !invalido; }
+  function valorRadio(nome) { var r = document.querySelector('input[name="' + nome + '"]:checked'); return r ? r.value : null; }
+
+  el('form-cadastro').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var aviso = el('aviso');
+    aviso.className = 'aviso';
+
+    var nome = el('nome').value.trim().replace(/\s+/g, ' ');
+    var cpf = soDigitos(el('cpf').value);
+    var celular = soDigitos(el('celular').value);
+    var email = el('email').value.trim();
+    var nascimento = el('nascimento').value;
+    var tipo = valorRadio('tipo');
+    var rosto = valorRadio('rosto');
+
+    var ok = true;
+    ok = marcar('c-nome', nome.length < 3 || nome.indexOf(' ') === -1) && ok;
+    ok = marcar('c-cpf', !cpfValido(cpf)) && ok;
+    ok = marcar('c-celular', celular.length < 10 || celular.length > 11) && ok;
+    ok = marcar('c-email', email !== '' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) && ok;
+    ok = marcar('c-nascimento', !nascimento) && ok;
+    ok = marcar('c-tipo', !tipo) && ok;
+    ok = marcar('c-rosto', !rosto) && ok;
+    ok = marcar('c-regulamento', !el('regulamento').checked) && ok;
+    ok = marcar('c-lgpd', !el('lgpd').checked) && ok;
+    if (!ok) {
+      var primeiro = document.querySelector('.campo.invalido');
+      if (primeiro) primeiro.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    if (el('site').value) return; // robô preencheu o campo invisível
+
+    var btn = el('btn-enviar');
+    btn.disabled = true;
+    btn.textContent = 'ENVIANDO...';
+
+    fetch(SUPABASE_URL + '/rest/v1/cadastros', {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_CHAVE_PUBLICA,
+        'Authorization': 'Bearer ' + SUPABASE_CHAVE_PUBLICA,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({
+        nome: nome, cpf: cpf, celular: celular, email: email || null, data_nascimento: nascimento,
+        tipo: tipo, professor: tipo === 'clubista' ? null : (el('professor').value.trim() || null),
+        rosto_na_catraca: rosto, aceite_regulamento: true, aceite_lgpd: true
+      })
+    }).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      el('tela-form').classList.add('escondido');
+      el('tela-ok').classList.remove('escondido');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }).catch(function () {
+      btn.disabled = false;
+      btn.textContent = 'ENVIAR CADASTRO';
+      aviso.textContent = 'Não consegui enviar agora. Confira sua internet e tente de novo. Se continuar, chame o suporte no WhatsApp (19) 99433-5341.';
+      aviso.className = 'aviso erro';
+    });
+  });
+</script>
+</body>
+</html>
