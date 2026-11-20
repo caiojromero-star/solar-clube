@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="format-detection" content="telephone=no">
+<title>Agenda do Tênis — Solar Clube</title>
+<meta name="description" content="Veja os horários livres das quadras de tênis T1 e T2 do Solar Clube e reserve pelo celular.">
+<meta property="og:title" content="Agenda do Tênis — Solar Clube">
+<meta property="og:description" content="Horários livres das quadras T1 e T2. Reserve em 1 minuto.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../estilo.css">
+<style>
+  .pagina { max-width: 640px; }
+  .dias { display: flex; gap: 6px; overflow-x: auto; padding: 4px 0 10px; scrollbar-width: none; }
+  .dias::-webkit-scrollbar { display: none; }
+  .dia { flex: none; min-width: 58px; text-align: center; padding: 8px 6px; border-radius: 10px; border: 1px solid var(--campo-borda); background: var(--campo); color: var(--branco); cursor: pointer; font: inherit; }
+  .dia b { display: block; font-family: "Bebas Neue", Impact, sans-serif; font-size: 24px; font-weight: 400; line-height: 1; }
+  .dia small { font-size: 12px; opacity: .85; text-transform: uppercase; }
+  .dia.ativo { background: var(--amarelo); color: var(--marinho); border-color: var(--amarelo); }
+  .legenda { display: flex; flex-wrap: wrap; gap: 10px 14px; font-size: 13px; color: var(--branco-suave); margin: 6px 0 12px; }
+  .legenda i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+  .grade { display: grid; grid-template-columns: 54px 1fr 1fr; gap: 6px; align-items: stretch; }
+  .grade .cab { font-family: "Bebas Neue", Impact, sans-serif; font-size: 26px; color: var(--amarelo); text-align: center; padding: 4px 0; }
+  .grade .cab small { display: block; font-family: "Segoe UI", system-ui, sans-serif; font-size: 11px; color: var(--branco-suave); letter-spacing: .5px; }
+  .hora { font-weight: 700; font-size: 15px; display: flex; align-items: center; justify-content: flex-end; padding-right: 4px; color: var(--branco-suave); }
+  .slot { min-height: 48px; border-radius: 10px; border: 1px solid transparent; font: inherit; font-size: 14px; font-weight: 600; padding: 6px 8px; text-align: left; line-height: 1.2; }
+  .slot.livre { background: rgba(255,255,255,.95); color: var(--marinho); border-color: #fff; cursor: pointer; }
+  .slot.livre:hover { outline: 3px solid var(--amarelo); }
+  .slot.livre span { display: block; font-size: 12px; font-weight: 400; color: #4A5A7A; }
+  .slot.aula { background: #0A2864; color: #fff; border-color: rgba(255,255,255,.25); }
+  .slot.aula span { display: block; font-size: 12px; font-weight: 400; opacity: .85; }
+  .slot.reservado { background: rgba(255,255,255,.12); color: rgba(255,255,255,.65); }
+  .slot.pendente { background: rgba(254,183,5,.22); color: #FFE6A3; border-color: rgba(254,183,5,.5); }
+  .slot.bloqueado, .slot.passou { background: rgba(0,0,0,.18); color: rgba(255,255,255,.45); }
+  .vazio { color: var(--branco-suave); padding: 20px 4px; text-align: center; }
+  .caixa { background: rgba(255,255,255,.08); border: 1px solid var(--campo-borda); border-radius: 14px; padding: 16px; margin-top: 22px; }
+  .caixa h2 { font-family: "Bebas Neue", Impact, sans-serif; font-weight: 400; font-size: 28px; color: var(--amarelo); margin-bottom: 6px; }
+  .regras li { margin: 4px 0 4px 18px; font-size: 14px; color: var(--branco-suave); }
+  /* modal */
+  .fundo { position: fixed; inset: 0; background: rgba(5,15,40,.7); display: flex; align-items: flex-end; justify-content: center; z-index: 10; }
+  .modal { background: var(--azul-1); background: linear-gradient(160deg, var(--azul-1), var(--azul-2)); width: 100%; max-width: 520px; border-radius: 18px 18px 0 0; padding: 22px 18px 26px; border: 1px solid var(--campo-borda); max-height: 92vh; overflow-y: auto; }
+  @media (min-width: 600px) { .fundo { align-items: center; } .modal { border-radius: 18px; } }
+  .modal h3 { font-family: "Bebas Neue", Impact, sans-serif; font-weight: 400; font-size: 34px; color: var(--amarelo); line-height: 1; }
+  .modal .resumo { margin: 6px 0 16px; color: var(--branco-suave); }
+  .botoes { display: flex; gap: 8px; margin-top: 14px; }
+  .botoes button, .botoes a { flex: 1; }
+  .sec { background: transparent !important; color: var(--branco) !important; border: 1px solid var(--campo-borda) !important; }
+  .wa { display: block; text-align: center; margin-top: 12px; padding: 14px; border-radius: 12px; background: #25D366; color: #fff; text-decoration: none; font-weight: 700; }
+  .pix { text-align: center; margin-top: 12px; }
+  .pix img { width: 180px; background: #fff; border-radius: 12px; padding: 8px; }
+  .minha { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--campo-borda); font-size: 15px; }
+  .minha button { font: inherit; font-size: 13px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--erro); background: transparent; color: var(--erro); cursor: pointer; }
+  .tag { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 20px; background: rgba(254,183,5,.25); color: #FFE6A3; margin-left: 6px; }
+</style>
+</head>
+<body>
+<main class="pagina">
+  <div class="topo">
+    <svg class="seta" viewBox="0 0 150 150" aria-hidden="true"><polygon fill="#FEB705" points="0,0 72,0 47,25 150,128 128,150 25,47 0,72"/></svg>
+    <div class="logo"><img src="../logo-solar.jpg" alt="Solar Clube"></div>
+  </div>
+
+  <h1 class="titulo">TÊNIS DE CAMPO</h1>
+  <div class="titulo faixa">AGENDA DAS QUADRAS</div>
+  <p class="intro">Toque em um horário <b>livre</b> para reservar. Os horários das aulas já aparecem bloqueados.</p>
+
+  <div class="dias" id="dias"></div>
+  <div class="legenda">
+    <span><i style="background:#fff"></i>Livre</span>
+    <span><i style="background:#0A2864;border:1px solid rgba(255,255,255,.4)"></i>Aula</span>
+    <span><i style="background:rgba(255,255,255,.25)"></i>Reservado</span>
+    <span><i style="background:rgba(254,183,5,.5)"></i>Aguardando Pix</span>
+  </div>
+  <div id="grade"><p class="vazio">Carregando a agenda…</p></div>
+
+  <div class="caixa">
+    <h2>MINHAS RESERVAS</h2>
+    <p class="dica" style="margin:0 0 10px">Digite seu CPF para ver ou cancelar suas reservas.</p>
+    <div style="display:flex;gap:8px">
+      <input type="text" id="m-cpf" inputmode="numeric" placeholder="000.000.000-00" maxlength="14" style="flex:1">
+      <button class="enviar" id="m-ver" style="margin:0;padding:10px 16px;font-size:20px">VER</button>
+    </div>
+    <div id="m-lista"></div>
+  </div>
+
+  <div class="caixa">
+    <h2>COMO FUNCIONA</h2>
+    <ul class="regras">
+      <li>Só reserva quem tem <a href="../cadastro/" style="color:var(--amarelo)">cadastro no Solar</a>.</li>
+      <li>Cada horário vale 1 hora. Até 2 reservas por pessoa por semana, com até 14 dias de antecedência.</li>
+      <li>Alunos de tênis e atletas do ranking: reserva confirmada na hora.</li>
+      <li>Demais: day use de tênis R$ 50 por Pix. A reserva fica "aguardando Pix" e vale após o envio do comprovante pelo WhatsApp (até 12 horas).</li>
+      <li>Cancelamento até 24 horas antes, aqui mesmo em "Minhas reservas".</li>
+      <li>Segunda a sexta, das 6h às 23h. Sábados, domingos e feriados, das 6h às 18h.</li>
+    </ul>
+  </div>
+
+  <p class="rodape">Dúvidas? WhatsApp do suporte: <a href="https://wa.me/5519994335341">(19) 99433-5341</a><br>Solar Clube · Mogi Mirim/SP</p>
+</main>
+
+<div class="fundo escondido" id="fundo">
+  <div class="modal" id="modal"></div>
+</div>
+
+<script>
+  var SUPABASE_URL = 'https://wpmsbzfwobodcqxkbacw.supabase.co';
+  var SUPABASE_CHAVE_PUBLICA = 'sb_publishable_1QUirZF5fXtURr-qWuM2yQ_yfKVVhTd';
+  var WHATS_SUPORTE = '5519994335341';
+  var DIAS_A_FRENTE = 14;
+  var NOMES_DIA = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+  var NOMES_DIA_LONGO = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
+
+  var el = function (id) { return document.getElementById(id); };
+  var ocupacao = {}, diaSel = null, slotSel = null;
+
+  function rpc(nome, args) {
+    return fetch(SUPABASE_URL + '/rest/v1/rpc/' + nome, {
+      method: 'POST',
+      headers: { apikey: SUPABASE_CHAVE_PUBLICA, Authorization: 'Bearer ' + SUPABASE_CHAVE_PUBLICA, 'Content-Type': 'application/json' },
+      body: JSON.stringify(args)
+    }).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
+  }
+  function soDigitos(v) { return (v || '').replace(/\D/g, ''); }
+  function mascaraCpf(v) { var d = soDigitos(v).slice(0, 11); return d.replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2'); }
+  function cpfValido(cpf) {
+    cpf = soDigitos(cpf); if (cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf)) return false;
+    for (var t = 9; t < 11; t++) { var s = 0; for (var i = 0; i < t; i++) s += Number(cpf[i]) * (t + 1 - i); if (((s * 10) % 11) % 10 !== Number(cpf[t])) return false; }
+    return true;
+  }
+  // datas no fuso de São Paulo
+  function hojeSP() { var s = new Date().toLocaleString('sv-SE', { timeZone: 'America/Sao_Paulo' }); return s.slice(0, 10); }
+  function horaSP() { return new Date().toLocaleString('sv-SE', { timeZone: 'America/Sao_Paulo' }).slice(11, 16); }
+  function somaDias(iso, n) { var d = new Date(iso + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+  function dow(iso) { return new Date(iso + 'T12:00:00Z').getUTCDay(); }
+  function dataBR(iso) { var p = iso.split('-'); return p[2] + '/' + p[1]; }
+  function horas(iso) { var ult = (dow(iso) === 0 || dow(iso) === 6) ? 17 : 22, l = []; for (var h = 6; h <= ult; h++) l.push((h < 10 ? '0' : '') + h + ':00'); return l; }
+
+  function montarDias() {
+    var hoje = hojeSP(), html = '';
+    for (var i = 0; i < DIAS_A_FRENTE; i++) {
+      var d = somaDias(hoje, i);
+      html += '<button class="dia' + (d === diaSel ? ' ativo' : '') + '" data-d="' + d + '"><small>' + (i === 0 ? 'hoje' : NOMES_DIA[dow(d)]) + '</small><b>' + d.slice(8) + '</b></button>';
+    }
+    el('dias').innerHTML = html;
+    el('dias').querySelectorAll('.dia').forEach(function (b) { b.onclick = function () { diaSel = b.dataset.d; montarDias(); montarGrade(); }; });
+  }
+
+  function carregar() {
+    var hoje = hojeSP();
+    return rpc('agenda_publica', { p_inicio: hoje, p_dias: DIAS_A_FRENTE }).then(function (lista) {
+      ocupacao = {};
+      lista.forEach(function (o) { ocupacao[o.data + '|' + o.quadra + '|' + o.hora.slice(0, 5)] = o; });
+      montarGrade();
+    }).catch(function () { el('grade').innerHTML = '<p class="vazio">Não consegui carregar a agenda agora. Tente de novo em instantes ou fale com o suporte.</p>'; });
+  }
+
+  function celula(q, h) {
+    var o = ocupacao[diaSel + '|' + q + '|' + h];
+    var passou = diaSel === hojeSP() && h <= horaSP();
+    if (o && o.situacao === 'aula') return '<div class="slot aula">Aula<span>' + (o.detalhe || '') + '</span></div>';
+    if (o && o.situacao === 'bloqueado') return '<div class="slot bloqueado">' + (o.detalhe || 'Indisponível') + '</div>';
+    if (o && o.situacao === 'pendente') return '<div class="slot pendente">Aguardando Pix</div>';
+    if (o) return '<div class="slot reservado">Reservado</div>';
+    if (passou) return '<div class="slot passou">—</div>';
+    return '<button class="slot livre" data-q="' + q + '" data-h="' + h + '">Livre<span>Reservar</span></button>';
+  }
+
+  function montarGrade() {
+    var hs = horas(diaSel), html = '<div class="grade"><div></div><div class="cab">T1<small>QUADRA 1</small></div><div class="cab">T2<small>QUADRA 2</small></div>';
+    hs.forEach(function (h) { html += '<div class="hora">' + h.slice(0, 2) + 'h</div>' + celula('T1', h) + celula('T2', h); });
+    el('grade').innerHTML = html + '</div>';
+    el('grade').querySelectorAll('.slot.livre').forEach(function (b) { b.onclick = function () { abrirReserva(b.dataset.q, b.dataset.h); }; });
+  }
+
+  // ---------- reserva ----------
+  function abrirModal(html) { el('modal').innerHTML = html; el('fundo').classList.remove('escondido'); }
+  function fecharModal() { el('fundo').classList.add('escondido'); }
+  el('fundo').addEventListener('click', function (e) { if (e.target === el('fundo')) fecharModal(); });
+
+  function textoData(d, h) { return NOMES_DIA_LONGO[dow(d)] + ', ' + dataBR(d) + ' às ' + h.slice(0, 2) + 'h'; }
+
+  function abrirReserva(q, h) {
+    slotSel = { q: q, h: h, d: diaSel };
+    abrirModal('<h3>RESERVAR QUADRA ' + q + '</h3><p class="resumo">' + textoData(diaSel, h) + ' (1 hora)</p>' +
+      '<div class="campo" id="c-cpf"><label for="r-cpf">Seu CPF</label><input type="text" id="r-cpf" inputmode="numeric" placeholder="000.000.000-00" maxlength="14">' +
+      '<div class="erro-campo">CPF inválido.</div></div>' +
+      '<div class="aviso" id="r-aviso"></div>' +
+      '<div class="botoes"><button class="enviar sec" id="r-voltar">VOLTAR</button><button class="enviar" id="r-ok">RESERVAR</button></div>');
+    var cpf = el('r-cpf');
+    try { var salvo = localStorage.getItem('solar_cpf'); if (salvo) cpf.value = mascaraCpf(salvo); } catch (e) {}
+    cpf.addEventListener('input', function () { this.value = mascaraCpf(this.value); });
+    cpf.focus();
+    el('r-voltar').onclick = fecharModal;
+    el('r-ok').onclick = confirmar;
+    cpf.addEventListener('keydown', function (e) { if (e.key === 'Enter') confirmar(); });
+  }
+
+  function confirmar() {
+    var cpf = soDigitos(el('r-cpf').value);
+    el('c-cpf').classList.toggle('invalido', !cpfValido(cpf));
+    if (!cpfValido(cpf)) return;
+    var btn = el('r-ok'); btn.disabled = true; btn.textContent = 'RESERVANDO…';
+    rpc('reservar_quadra', { p_cpf: cpf, p_quadra: slotSel.q, p_data: slotSel.d, p_hora: slotSel.h }).then(function (r) {
+      if (!r.ok) {
+        btn.disabled = false; btn.textContent = 'RESERVAR';
+        var av = el('r-aviso');
+        av.innerHTML = r.erro + (r.sem_cadastro ? ' <a href="../cadastro/" style="color:var(--amarelo)">Fazer cadastro</a>' : '');
+        av.className = 'aviso erro';
+        if (/ocupado/.test(r.erro)) carregar();
+        return;
+      }
+      try { localStorage.setItem('solar_cpf', cpf); } catch (e) {}
+      el('m-cpf').value = mascaraCpf(cpf);
+      mostrarResultado(r); carregar();
+    }).catch(function () {
+      btn.disabled = false; btn.textContent = 'RESERVAR';
+      el('r-aviso').textContent = 'Não consegui reservar agora. Confira sua internet e tente de novo.'; el('r-aviso').className = 'aviso erro';
+    });
+  }
+
+  function mostrarResultado(r) {
+    var quando = textoData(r.data, r.hora);
+    if (r.status === 'confirmada') {
+      var msg = 'Reserva confirmada no Solar Clube: quadra ' + r.quadra + ', ' + quando + '.';
+      abrirModal('<h3>RESERVA CONFIRMADA!</h3><p class="resumo">' + r.nome + ', a quadra <b>' + r.quadra + '</b> é sua: ' + quando + '.</p>' +
+        '<p class="dica">Precisa desmarcar? Cancele até 24 horas antes em "Minhas reservas".</p>' +
+        '<a class="wa" href="https://wa.me/?text=' + encodeURIComponent(msg) + '" target="_blank" rel="noopener">Guardar no meu WhatsApp</a>' +
+        '<div class="botoes"><button class="enviar" onclick="fecharModal()">OK</button></div>');
+    } else {
+      var txt = 'Olá! Reservei a quadra ' + r.quadra + ' do Solar Clube para ' + quando + ' (day use de tênis R$ 50). Segue o comprovante do Pix. Nome: ' + r.nome + '.';
+      abrirModal('<h3>FALTA SÓ O PIX</h3><p class="resumo">' + r.nome + ', a quadra <b>' + r.quadra + '</b> está separada para você: ' + quando + '.</p>' +
+        '<p>Pague o <b>day use de R$ 50</b> pelo Pix abaixo e envie o comprovante pelo WhatsApp. A reserva fica guardada por 12 horas.</p>' +
+        '<div class="pix"><img src="pix.png" alt="QR Code Pix do Solar Clube"></div>' +
+        '<a class="wa" href="https://wa.me/' + WHATS_SUPORTE + '?text=' + encodeURIComponent(txt) + '" target="_blank" rel="noopener">Enviar comprovante no WhatsApp</a>' +
+        '<div class="botoes"><button class="enviar sec" onclick="fecharModal()">FECHAR</button></div>');
+    }
+  }
+
+  // ---------- minhas reservas ----------
+  el('m-cpf').addEventListener('input', function () { this.value = mascaraCpf(this.value); });
+  try { var s0 = localStorage.getItem('solar_cpf'); if (s0) el('m-cpf').value = mascaraCpf(s0); } catch (e) {}
+  el('m-ver').onclick = verMinhas;
+  function verMinhas() {
+    var cpf = soDigitos(el('m-cpf').value);
+    if (!cpfValido(cpf)) { el('m-lista').innerHTML = '<p class="erro-campo" style="display:block">CPF inválido.</p>'; return; }
+    rpc('minhas_reservas', { p_cpf: cpf }).then(function (l) {
+      if (!l.length) { el('m-lista').innerHTML = '<p class="dica" style="margin-top:10px">Nenhuma reserva futura.</p>'; return; }
+      el('m-lista').innerHTML = l.map(function (r) {
+        return '<div class="minha"><span>Quadra <b>' + r.quadra + '</b> · ' + NOMES_DIA[dow(r.data)] + ' ' + dataBR(r.data) + ' às ' + r.hora.slice(0, 2) + 'h' +
+          (r.status === 'aguardando_pix' ? '<span class="tag">aguardando Pix</span>' : '') + '</span><button data-id="' + r.id + '">Cancelar</button></div>';
+      }).join('');
+      el('m-lista').querySelectorAll('button').forEach(function (b) {
+        b.onclick = function () {
+          if (!confirm('Cancelar esta reserva?')) return;
+          rpc('cancelar_reserva', { p_id: b.dataset.id, p_cpf: cpf }).then(function (r) {
+            if (!r.ok) { alert(r.erro); return; }
+            verMinhas(); carregar();
+          });
+        };
+      });
+    }).catch(function () { el('m-lista').innerHTML = '<p class="dica">Não consegui buscar agora.</p>'; });
+  }
+
+  diaSel = hojeSP();
+  montarDias(); carregar();
+  setInterval(carregar, 60000);
+</script>
+</body>
+</html>
