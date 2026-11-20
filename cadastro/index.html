@@ -1,14 +1,32 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="format-detection" content="telephone=no">
 <title>Cadastro — Solar Clube</title>
-<meta name="description" content="Cadastro de clubistas e alunos do Solar Clube para cobrança por Pix e acesso pela catraca.">
+<meta name="description" content="Cadastro único do Solar Clube: alunos, clubistas, ranking de tênis e day use.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../estilo.css">
+<style>
+  .secao { font-family: "Bebas Neue", "Arial Narrow", Impact, sans-serif; font-size: 28px; color: var(--amarelo); letter-spacing: .5px; margin-top: 14px; border-top: 1px solid var(--campo-borda); padding-top: 18px; }
+  select { width: 100%; padding: 13px 14px; border-radius: 10px; border: 1px solid var(--campo-borda); background: var(--azul-1); color: var(--branco); font: inherit; }
+  select:focus { outline: 2px solid var(--amarelo); outline-offset: 1px; }
+  textarea { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--campo-borda); background: var(--campo); color: var(--branco); font: inherit; min-height: 70px; resize: vertical; }
+  .linha { display: flex; gap: 8px; flex-wrap: wrap; }
+  .linha .opcao { flex: 1 1 140px; }
+  .preco { color: var(--branco-suave); font-size: 14px; display: block; }
+  .parq-item { padding: 12px 14px; border-radius: 10px; border: 1px solid var(--campo-borda); background: var(--campo); }
+  .parq-item p { margin-bottom: 8px; font-size: 15px; }
+  .parq-item .sn { display: flex; gap: 8px; }
+  .parq-item .sn label { flex: 1; text-align: center; margin: 0; padding: 8px; border-radius: 8px; border: 1px solid var(--campo-borda); font-weight: 600; cursor: pointer; }
+  .parq-item .sn input { position: absolute; opacity: 0; pointer-events: none; }
+  .parq-item .sn label:has(input:checked) { background: var(--amarelo); color: var(--marinho); border-color: var(--amarelo); }
+  .parq-item.invalido { border-color: var(--erro); }
+  .alerta { padding: 12px 14px; border-radius: 10px; background: rgba(254, 183, 5, .16); border: 1px solid var(--amarelo); font-size: 15px; }
+  .campo.invalido select, .campo.invalido textarea { border-color: var(--erro); }
+</style>
 </head>
 <body>
 <main class="pagina">
@@ -20,13 +38,15 @@
   <section id="tela-form">
     <h1 class="titulo">BEM-VINDO AO SOLAR</h1>
     <div class="titulo faixa">FAÇA SEU CADASTRO</div>
-    <p class="intro">Preencha seus dados para receber suas cobranças pelo WhatsApp e manter seu acesso liberado na catraca. Leva 1 minuto.</p>
+    <p class="intro">Cadastro único do Solar Clube, para alunos, clubistas, ranking e day use. Ele libera seu acesso na catraca e organiza suas cobranças. Leva 3 minutos.</p>
 
     <form id="form-cadastro" novalidate>
       <div class="armadilha" aria-hidden="true">
         <label for="site">Não preencha</label>
         <input type="text" id="site" name="site" tabindex="-1" autocomplete="off">
       </div>
+
+      <div class="secao">1. Seus dados</div>
 
       <div class="campo" id="c-nome">
         <label for="nome">Nome completo</label>
@@ -58,24 +78,65 @@
         <div class="erro-campo">Informe sua data de nascimento.</div>
       </div>
 
+      <div class="escondido" id="bloco-responsavel">
+        <div class="alerta" style="margin-bottom:12px">Menor de 18 anos: o cadastro deve ser preenchido junto com o pai, a mãe ou o responsável legal.</div>
+        <div class="campo" id="c-resp-nome">
+          <label for="resp-nome">Nome do responsável</label>
+          <input type="text" id="resp-nome" maxlength="120">
+          <div class="erro-campo">Digite o nome completo do responsável.</div>
+        </div>
+        <div class="campo" id="c-resp-cpf" style="margin-top:16px">
+          <label for="resp-cpf">CPF do responsável</label>
+          <input type="text" id="resp-cpf" inputmode="numeric" placeholder="000.000.000-00" maxlength="14">
+          <div class="erro-campo">CPF do responsável inválido.</div>
+        </div>
+      </div>
+
+      <div class="secao">2. Como você usa o Solar</div>
+
+      <div class="campo" id="c-modalidade">
+        <label>Modalidade <span class="opcional">(pode marcar mais de uma)</span></label>
+        <div class="linha">
+          <label class="opcao"><input type="checkbox" name="modalidade" value="beach"> Beach tennis</label>
+          <label class="opcao"><input type="checkbox" name="modalidade" value="tenis"> Tênis de campo</label>
+          <label class="opcao"><input type="checkbox" name="modalidade" value="funcional"> Funcional</label>
+        </div>
+        <div class="erro-campo">Marque pelo menos uma modalidade.</div>
+      </div>
+
       <div class="campo" id="c-tipo">
-        <label>Como você usa o Solar?</label>
+        <label>Você é</label>
         <div class="opcoes">
-          <label class="opcao"><input type="radio" name="tipo" value="clubista"> Clubista — plano mensal de R$ 55 para jogar livre</label>
-          <label class="opcao"><input type="radio" name="tipo" value="aluno"> Aluno de aula — R$ 205/mês, 4 aulas</label>
-          <label class="opcao"><input type="radio" name="tipo" value="clubista_aluno"> Clubista e aluno de aula</label>
+          <label class="opcao"><input type="radio" name="tipo" value="aluno"> <span>Aluno de aula<span class="preco">Inclui o clubinho do beach tennis. A mensalidade é paga ao seu professor.</span></span></label>
+          <label class="opcao"><input type="radio" name="tipo" value="clubista"> <span>Clubista do beach tennis<span class="preco">R$ 55/mês para jogar livre todos os dias.</span></span></label>
+          <label class="opcao"><input type="radio" name="tipo" value="ranking_tenis"> <span>Ranking de tênis de campo<span class="preco">R$ 50/mês.</span></span></label>
+          <label class="opcao"><input type="radio" name="tipo" value="dayuse"> <span>Day use<span class="preco">Beach tennis R$ 30 · Tênis de campo R$ 50 (por dia).</span></span></label>
         </div>
         <div class="erro-campo">Escolha uma opção.</div>
       </div>
 
-      <div class="campo escondido" id="c-professor">
-        <label for="professor">Nome do seu professor <span class="opcional">(opcional)</span></label>
-        <input type="text" id="professor" maxlength="120">
+      <div class="escondido" id="bloco-aluno">
+        <div class="campo" id="c-frequencia">
+          <label>Quantas aulas por semana?</label>
+          <div class="opcoes">
+            <label class="opcao"><input type="radio" name="frequencia" value="1x"> <span>1x por semana<span class="preco" id="preco-1x"></span></span></label>
+            <label class="opcao"><input type="radio" name="frequencia" value="2x"> <span>2x por semana<span class="preco" id="preco-2x"></span></span></label>
+          </div>
+          <div class="erro-campo">Escolha a frequência.</div>
+        </div>
+
+        <div class="campo" id="c-professor" style="margin-top:16px">
+          <label for="professor">Seu professor</label>
+          <select id="professor">
+            <option value="">Carregando professores...</option>
+          </select>
+          <div class="erro-campo">Escolha seu professor.</div>
+        </div>
       </div>
 
       <div class="campo" id="c-rosto">
         <label>Seu rosto já está cadastrado na catraca?</label>
-        <div class="opcoes">
+        <div class="linha">
           <label class="opcao"><input type="radio" name="rosto" value="sim"> Sim</label>
           <label class="opcao"><input type="radio" name="rosto" value="nao"> Não</label>
           <label class="opcao"><input type="radio" name="rosto" value="nao_sei"> Não sei</label>
@@ -83,14 +144,34 @@
         <div class="erro-campo">Escolha uma opção.</div>
       </div>
 
+      <div class="secao">3. Saúde (PAR-Q)</div>
+      <p class="dica" style="margin-top:-6px">Questionário de prontidão para atividade física, obrigatório pelo Regulamento (Art. 11). Responda com sinceridade.</p>
+      <div id="parq" class="opcoes"></div>
+      <div class="alerta escondido" id="parq-alerta">Você respondeu <b>SIM</b> a pelo menos uma pergunta. Antes de começar ou continuar as atividades, consulte um médico e envie a liberação médica pelo WhatsApp do suporte (19) 99433-5341.</div>
+      <div class="campo" id="c-parq-obs">
+        <label for="parq-obs">Algo que o professor deve saber? <span class="opcional">(opcional: lesões, cirurgias, restrições)</span></label>
+        <textarea id="parq-obs" maxlength="600"></textarea>
+      </div>
+
+      <div class="secao">4. Termos</div>
+
       <div class="campo" id="c-regulamento">
-        <label class="opcao aceite"><input type="checkbox" id="regulamento"> Li e aceito o Regulamento do Solar Clube.</label>
-        <div class="dica">Quer uma cópia? Peça pelo WhatsApp (19) 99433-5341.</div>
-        <div class="erro-campo">É preciso aceitar o regulamento.</div>
+        <label class="opcao aceite"><input type="checkbox" id="regulamento"> Li e aceito o Regulamento Geral do Solar Clube. Declaro que as respostas do PAR-Q são verdadeiras e que estou apto à prática esportiva, que é de minha responsabilidade.</label>
+        <div class="dica">Quer uma cópia do Regulamento? Peça pelo WhatsApp (19) 99433-5341.</div>
+        <div class="erro-campo">É preciso aceitar o Regulamento.</div>
+      </div>
+
+      <div class="campo" id="c-biometria">
+        <label class="opcao aceite"><input type="checkbox" id="biometria"> Autorizo o uso da minha imagem facial (biometria) na catraca, apenas para controle de acesso, segurança e registro de frequência. Os dados são apagados em até 30 dias após o fim do meu vínculo, e posso revogar a autorização pelo suporte (Art. 13).</label>
+        <div class="erro-campo">A catraca funciona por reconhecimento facial. Sem essa autorização, fale com o suporte para combinar outra forma de acesso.</div>
+      </div>
+
+      <div class="campo" id="c-imagem">
+        <label class="opcao aceite"><input type="checkbox" id="imagem"> Autorizo o uso da minha imagem em fotos e vídeos do Solar para divulgação. <span class="opcional">(opcional, Art. 12)</span></label>
       </div>
 
       <div class="campo" id="c-lgpd">
-        <label class="opcao aceite"><input type="checkbox" id="lgpd"> Autorizo o Solar Clube a usar meus dados (nome, CPF, celular e e-mail) para emissão de cobranças e controle de acesso, conforme a LGPD.</label>
+        <label class="opcao aceite"><input type="checkbox" id="lgpd"> Autorizo o Solar Clube a tratar meus dados (cadastro, PAR-Q e frequência) para cobranças, controle de acesso, segurança e organização das atividades, conforme a LGPD.</label>
         <div class="erro-campo">É preciso autorizar o uso dos dados.</div>
       </div>
 
@@ -102,7 +183,7 @@
   <section id="tela-ok" class="sucesso escondido">
     <div class="check">✓</div>
     <h1 class="titulo">CADASTRO RECEBIDO!</h1>
-    <p class="intro" style="margin-top:12px">Em breve você recebe suas cobranças pelo WhatsApp. Bom jogo!</p>
+    <p class="intro" style="margin-top:12px" id="msg-ok">Pronto! Seu cadastro está no sistema do Solar. Bom jogo!</p>
   </section>
 
   <p class="rodape">Dúvidas? WhatsApp do suporte: <a href="https://wa.me/5519994335341">(19) 99433-5341</a><br>Solar Clube · Mogi Mirim/SP</p>
@@ -113,9 +194,21 @@
   // O banco só aceita INSERIR (RLS): ninguém consegue ler ou mudar cadastros por aqui.
   var SUPABASE_URL = 'https://wpmsbzfwobodcqxkbacw.supabase.co';
   var SUPABASE_CHAVE_PUBLICA = 'sb_publishable_1QUirZF5fXtURr-qWuM2yQ_yfKVVhTd';
+  var VERSAO_REGULAMENTO = 'Regulamento Geral 2026-11';
 
+  var PRECOS = { beach: { '1x': 'R$ 205/mês', '2x': 'R$ 405/mês' }, tenis: { '1x': 'R$ 400/mês', '2x': 'R$ 800/mês' } };
+  var PARQ = [
+    'Algum médico já disse que você possui algum problema de coração e que só deveria realizar atividade física supervisionada por profissionais de saúde?',
+    'Você sente dores no peito quando pratica atividade física?',
+    'No último mês, você sentiu dores no peito quando praticou atividade física?',
+    'Você apresenta desequilíbrio devido a tontura e/ou perda de consciência?',
+    'Você possui algum problema ósseo ou articular que poderia piorar com a atividade física?',
+    'Você toma atualmente algum medicamento para pressão arterial e/ou problema de coração?',
+    'Sabe de alguma outra razão pela qual você não deve praticar atividade física?'
+  ];
+
+  var el = function (id) { return document.getElementById(id); };
   function soDigitos(v) { return (v || '').replace(/\D/g, ''); }
-
   function cpfValido(cpf) {
     cpf = soDigitos(cpf);
     if (cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf)) return false;
@@ -127,12 +220,10 @@
     }
     return true;
   }
-
   function mascaraCpf(v) {
     var d = soDigitos(v).slice(0, 11);
     return d.replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2');
   }
-
   function mascaraCelular(v) {
     var d = soDigitos(v).slice(0, 11);
     if (d.length <= 2) return d.length ? '(' + d : '';
@@ -140,32 +231,93 @@
     if (d.length <= 10) return '(' + d.slice(0, 2) + ') ' + d.slice(2, 6) + '-' + d.slice(6);
     return '(' + d.slice(0, 2) + ') ' + d.slice(2, 7) + '-' + d.slice(7);
   }
+  function idade(iso) {
+    if (!iso) return null;
+    var n = new Date(iso + 'T12:00:00'), h = new Date();
+    var a = h.getFullYear() - n.getFullYear();
+    if (h.getMonth() < n.getMonth() || (h.getMonth() === n.getMonth() && h.getDate() < n.getDate())) a--;
+    return a;
+  }
+  function valorRadio(nome) { var r = document.querySelector('input[name="' + nome + '"]:checked'); return r ? r.value : null; }
+  function marcados(nome) { return Array.prototype.map.call(document.querySelectorAll('input[name="' + nome + '"]:checked'), function (c) { return c.value; }); }
+  function marcar(idCampo, invalido) { el(idCampo).classList.toggle('invalido', invalido); return !invalido; }
 
-  var el = function (id) { return document.getElementById(id); };
-  el('cpf').addEventListener('input', function () { this.value = mascaraCpf(this.value); });
+  ['cpf', 'resp-cpf'].forEach(function (id) { el(id).addEventListener('input', function () { this.value = mascaraCpf(this.value); }); });
   el('celular').addEventListener('input', function () { this.value = mascaraCelular(this.value); });
   el('nascimento').max = new Date().toISOString().slice(0, 10);
-
-  document.querySelectorAll('input[name="tipo"]').forEach(function (r) {
-    r.addEventListener('change', function () {
-      el('c-professor').classList.toggle('escondido', this.value === 'clubista');
-    });
+  el('nascimento').addEventListener('change', function () {
+    var i = idade(this.value);
+    el('bloco-responsavel').classList.toggle('escondido', !(i !== null && i < 18));
   });
 
-  function marcar(idCampo, invalido) { el(idCampo).classList.toggle('invalido', invalido); return !invalido; }
-  function valorRadio(nome) { var r = document.querySelector('input[name="' + nome + '"]:checked'); return r ? r.value : null; }
+  // PAR-Q
+  var parqBox = el('parq');
+  PARQ.forEach(function (p, i) {
+    var d = document.createElement('div');
+    d.className = 'parq-item'; d.id = 'parq-' + (i + 1);
+    d.innerHTML = '<p>' + (i + 1) + '. ' + p + '</p><div class="sn">' +
+      '<label><input type="radio" name="p' + (i + 1) + '" value="sim"> SIM</label>' +
+      '<label><input type="radio" name="p' + (i + 1) + '" value="nao"> NÃO</label></div>';
+    parqBox.appendChild(d);
+  });
+  parqBox.addEventListener('change', function () {
+    var algumSim = PARQ.some(function (_, i) { return valorRadio('p' + (i + 1)) === 'sim'; });
+    el('parq-alerta').classList.toggle('escondido', !algumSim);
+  });
+
+  // Professores (lista pública: só nome e modalidade)
+  var PROFESSORES = [];
+  fetch(SUPABASE_URL + '/rest/v1/professores?select=id,nome,modalidades&ativo=eq.true&order=nome', {
+    headers: { apikey: SUPABASE_CHAVE_PUBLICA, Authorization: 'Bearer ' + SUPABASE_CHAVE_PUBLICA }
+  }).then(function (r) { return r.ok ? r.json() : []; })
+    .then(function (lista) { PROFESSORES = lista || []; montarProfessores(); })
+    .catch(function () { montarProfessores(); });
+
+  function montarProfessores() {
+    var mods = marcados('modalidade');
+    var sel = el('professor'), atual = sel.value;
+    var lista = PROFESSORES.filter(function (p) {
+      return !mods.length || (p.modalidades || []).some(function (m) { return mods.indexOf(m) >= 0; });
+    });
+    sel.innerHTML = '<option value="">Escolha seu professor</option>' + lista.map(function (p) {
+      return '<option value="' + p.id + '">' + p.nome + '</option>';
+    }).join('') + '<option value="outro">Outro / ainda não sei</option>';
+    if (atual && sel.querySelector('option[value="' + atual + '"]')) sel.value = atual;
+  }
+
+  function atualizarAluno() {
+    var tipo = valorRadio('tipo'), mods = marcados('modalidade');
+    el('bloco-aluno').classList.toggle('escondido', tipo !== 'aluno');
+    var base = mods.indexOf('tenis') >= 0 && mods.indexOf('beach') < 0 ? 'tenis' : 'beach';
+    var txt = function (f) {
+      var partes = [];
+      if (mods.indexOf('beach') >= 0 || !mods.length) partes.push('Beach ' + PRECOS.beach[f]);
+      if (mods.indexOf('tenis') >= 0) partes.push('Tênis ' + PRECOS.tenis[f]);
+      if (mods.indexOf('funcional') >= 0) partes.push('Funcional: valor com o professor');
+      return partes.join(' · ');
+    };
+    el('preco-1x').textContent = txt('1x');
+    el('preco-2x').textContent = txt('2x');
+    montarProfessores();
+  }
+  document.querySelectorAll('input[name="tipo"], input[name="modalidade"]').forEach(function (r) { r.addEventListener('change', atualizarAluno); });
 
   el('form-cadastro').addEventListener('submit', function (e) {
     e.preventDefault();
-    var aviso = el('aviso');
-    aviso.className = 'aviso';
+    var aviso = el('aviso'); aviso.className = 'aviso';
 
     var nome = el('nome').value.trim().replace(/\s+/g, ' ');
     var cpf = soDigitos(el('cpf').value);
     var celular = soDigitos(el('celular').value);
     var email = el('email').value.trim();
     var nascimento = el('nascimento').value;
+    var menor = (idade(nascimento) !== null && idade(nascimento) < 18);
+    var respNome = el('resp-nome').value.trim().replace(/\s+/g, ' ');
+    var respCpf = soDigitos(el('resp-cpf').value);
+    var mods = marcados('modalidade');
     var tipo = valorRadio('tipo');
+    var freq = valorRadio('frequencia');
+    var prof = el('professor').value;
     var rosto = valorRadio('rosto');
 
     var ok = true;
@@ -174,46 +326,84 @@
     ok = marcar('c-celular', celular.length < 10 || celular.length > 11) && ok;
     ok = marcar('c-email', email !== '' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) && ok;
     ok = marcar('c-nascimento', !nascimento) && ok;
+    if (menor) {
+      ok = marcar('c-resp-nome', respNome.length < 3 || respNome.indexOf(' ') === -1) && ok;
+      ok = marcar('c-resp-cpf', !cpfValido(respCpf)) && ok;
+    }
+    ok = marcar('c-modalidade', !mods.length) && ok;
     ok = marcar('c-tipo', !tipo) && ok;
+    if (tipo === 'aluno') {
+      ok = marcar('c-frequencia', !freq) && ok;
+      ok = marcar('c-professor', !prof) && ok;
+    }
     ok = marcar('c-rosto', !rosto) && ok;
+    var parq = {}, algumSim = false;
+    PARQ.forEach(function (_, i) {
+      var v = valorRadio('p' + (i + 1));
+      el('parq-' + (i + 1)).classList.toggle('invalido', !v);
+      if (!v) ok = false;
+      parq['p' + (i + 1)] = v === 'sim';
+      if (v === 'sim') algumSim = true;
+    });
     ok = marcar('c-regulamento', !el('regulamento').checked) && ok;
+    ok = marcar('c-biometria', !el('biometria').checked) && ok;
     ok = marcar('c-lgpd', !el('lgpd').checked) && ok;
     if (!ok) {
-      var primeiro = document.querySelector('.campo.invalido');
+      var primeiro = document.querySelector('.campo.invalido, .parq-item.invalido');
       if (primeiro) primeiro.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      aviso.textContent = 'Faltou preencher alguns campos. Eles estão marcados em vermelho.';
+      aviso.className = 'aviso erro';
       return;
     }
     if (el('site').value) return; // robô preencheu o campo invisível
 
     var btn = el('btn-enviar');
-    btn.disabled = true;
-    btn.textContent = 'ENVIANDO...';
+    btn.disabled = true; btn.textContent = 'ENVIANDO...';
+
+    var profId = (tipo === 'aluno' && prof && prof !== 'outro') ? Number(prof) : null;
+    var profNome = null;
+    if (tipo === 'aluno') {
+      var achado = PROFESSORES.filter(function (p) { return p.id === profId; })[0];
+      profNome = achado ? achado.nome : 'Outro / não sei';
+    }
 
     fetch(SUPABASE_URL + '/rest/v1/cadastros', {
       method: 'POST',
       headers: {
-        'apikey': SUPABASE_CHAVE_PUBLICA,
-        'Authorization': 'Bearer ' + SUPABASE_CHAVE_PUBLICA,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=minimal'
+        apikey: SUPABASE_CHAVE_PUBLICA, Authorization: 'Bearer ' + SUPABASE_CHAVE_PUBLICA,
+        'Content-Type': 'application/json', Prefer: 'return=minimal'
       },
       body: JSON.stringify({
         nome: nome, cpf: cpf, celular: celular, email: email || null, data_nascimento: nascimento,
-        tipo: tipo, professor: tipo === 'clubista' ? null : (el('professor').value.trim() || null),
-        rosto_na_catraca: rosto, aceite_regulamento: true, aceite_lgpd: true
+        responsavel_nome: menor ? respNome : null, responsavel_cpf: menor ? respCpf : null,
+        modalidades: mods, tipo: tipo, frequencia: tipo === 'aluno' ? freq : null,
+        professor_id: profId, professor: profNome,
+        rosto_na_catraca: rosto,
+        parq: parq, parq_alerta: algumSim, parq_obs: el('parq-obs').value.trim() || null,
+        aceite_regulamento: true, aceite_biometria: true, autoriza_imagem: el('imagem').checked, aceite_lgpd: true,
+        versao_regulamento: VERSAO_REGULAMENTO
       })
     }).then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
+      if (algumSim) el('msg-ok').textContent = 'Seu cadastro está no sistema. Como você respondeu SIM no PAR-Q, envie a liberação médica pelo WhatsApp do suporte antes de começar.';
       el('tela-form').classList.add('escondido');
       el('tela-ok').classList.remove('escondido');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }).catch(function () {
-      btn.disabled = false;
-      btn.textContent = 'ENVIAR CADASTRO';
+      btn.disabled = false; btn.textContent = 'ENVIAR CADASTRO';
       aviso.textContent = 'Não consegui enviar agora. Confira sua internet e tente de novo. Se continuar, chame o suporte no WhatsApp (19) 99433-5341.';
       aviso.className = 'aviso erro';
     });
   });
+  // Ao corrigir um campo, some o aviso vermelho dele.
+  ['input', 'change'].forEach(function (ev) {
+    el('form-cadastro').addEventListener(ev, function (e) {
+      var c = e.target.closest('.campo, .parq-item');
+      if (c) c.classList.remove('invalido');
+      if (!document.querySelector('.campo.invalido, .parq-item.invalido')) el('aviso').className = 'aviso';
+    });
+  });
+  atualizarAluno();
 </script>
 </body>
 </html>
