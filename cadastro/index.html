@@ -107,7 +107,7 @@
       <div class="campo" id="c-tipo">
         <label>Você é</label>
         <div class="opcoes">
-          <label class="opcao"><input type="radio" name="tipo" value="aluno"> <span>Aluno de aula<span class="preco">Inclui o clubinho do beach tennis. A mensalidade é paga ao seu professor.</span></span></label>
+          <label class="opcao"><input type="radio" name="tipo" value="aluno"> <span>Aluno de aula<span class="preco">Turma ou particular. A mensalidade é paga ao seu professor.</span></span></label>
           <label class="opcao"><input type="radio" name="tipo" value="clubista"> <span>Clubista do beach tennis<span class="preco">R$ 55/mês para jogar livre todos os dias.</span></span></label>
           <label class="opcao"><input type="radio" name="tipo" value="ranking_tenis"> <span>Ranking de tênis de campo<span class="preco">R$ 50/mês.</span></span></label>
           <label class="opcao"><input type="radio" name="tipo" value="dayuse"> <span>Day use<span class="preco">Beach tennis R$ 30 · Tênis de campo R$ 50 (por dia).</span></span></label>
@@ -116,6 +116,14 @@
       </div>
 
       <div class="escondido" id="bloco-aluno">
+        <div class="campo" id="c-tipoaula" style="margin-bottom:16px">
+          <label>Tipo de aula</label>
+          <div class="linha">
+            <label class="opcao"><input type="radio" name="tipoaula" value="turma"> <span>Turma<span class="preco">Em grupo, com horário fixo. Inclui o clubinho.</span></span></label>
+            <label class="opcao"><input type="radio" name="tipoaula" value="particular"> <span>Particular<span class="preco">Valor combinado com o professor. Não inclui o clubinho.</span></span></label>
+          </div>
+          <div class="erro-campo">Escolha turma ou particular.</div>
+        </div>
         <div class="campo" id="c-frequencia">
           <label>Quantas aulas por semana?</label>
           <div class="opcoes">
@@ -131,6 +139,12 @@
             <option value="">Carregando professores...</option>
           </select>
           <div class="erro-campo">Escolha seu professor.</div>
+        </div>
+
+        <div class="campo escondido" id="c-turma" style="margin-top:16px">
+          <label>Sua turma</label>
+          <div class="opcoes" id="lista-turmas"></div>
+          <div class="erro-campo">Escolha sua turma.</div>
         </div>
       </div>
 
@@ -273,6 +287,31 @@
     .then(function (lista) { PROFESSORES = lista || []; montarProfessores(); })
     .catch(function () { montarProfessores(); });
 
+  var TURMAS = [];
+  var NOME_DIA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  fetch(SUPABASE_URL + '/rest/v1/rpc/turmas_publicas', {
+    method: 'POST', headers: { apikey: SUPABASE_CHAVE_PUBLICA, Authorization: 'Bearer ' + SUPABASE_CHAVE_PUBLICA, 'Content-Type': 'application/json' }, body: '{}'
+  }).then(function (r) { return r.ok ? r.json() : []; }).then(function (l) { TURMAS = l || []; montarTurmas(); }).catch(function () {});
+
+  function montarTurmas() {
+    var box = el('c-turma'), lista = el('lista-turmas');
+    var tipoAula = valorRadio('tipoaula'), prof = el('professor').value, mods = marcados('modalidade');
+    var mostrar = valorRadio('tipo') === 'aluno' && tipoAula === 'turma' && prof && prof !== 'outro';
+    box.classList.toggle('escondido', !mostrar);
+    if (!mostrar) return;
+    var atual = valorRadio('turma');
+    var ts = TURMAS.filter(function (t) { return String(t.professor_id) === prof && (!mods.length || mods.indexOf(t.modalidade) >= 0); });
+    var MODN = { beach: 'Beach', tenis: 'Tênis', funcional: 'Funcional' };
+    lista.innerHTML = ts.map(function (t) {
+      var livres = t.vagas - t.ocupadas, cheia = livres <= 0;
+      var quadra = t.quadra ? ' · Quadra ' + t.quadra : '';
+      return '<label class="opcao"' + (cheia ? ' style="opacity:.55"' : '') + '><input type="radio" name="turma" value="' + t.id + '"' + (cheia ? ' disabled' : '') + '> <span>' +
+        t.dias.map(function (d) { return NOME_DIA[d]; }).join(' e ') + ' · ' + t.inicio.slice(0, 5) + ' às ' + t.fim.slice(0, 5) + quadra +
+        '<span class="preco">' + (MODN[t.modalidade] || t.modalidade) + (t.nivel ? ' · ' + t.nivel : '') + ' · ' + (cheia ? 'turma cheia' : livres + (livres === 1 ? ' vaga' : ' vagas')) + '</span></span></label>';
+    }).join('') + '<label class="opcao"><input type="radio" name="turma" value="outra"> <span>Minha turma não está na lista<span class="preco">O professor confirma depois.</span></span></label>';
+    if (atual && lista.querySelector('input[value="' + atual + '"]:not([disabled])')) lista.querySelector('input[value="' + atual + '"]').checked = true;
+  }
+
   function montarProfessores() {
     var mods = marcados('modalidade');
     var sel = el('professor'), atual = sel.value;
@@ -283,6 +322,7 @@
       return '<option value="' + p.id + '">' + p.nome + '</option>';
     }).join('') + '<option value="outro">Outro / ainda não sei</option>';
     if (atual && sel.querySelector('option[value="' + atual + '"]')) sel.value = atual;
+    montarTurmas();
   }
 
   function atualizarAluno() {
@@ -294,13 +334,15 @@
       if (mods.indexOf('beach') >= 0 || !mods.length) partes.push('Beach ' + PRECOS.beach[f]);
       if (mods.indexOf('tenis') >= 0) partes.push('Tênis ' + PRECOS.tenis[f]);
       if (mods.indexOf('funcional') >= 0) partes.push('Funcional: valor com o professor');
+      if (valorRadio('tipoaula') === 'particular') return 'Particular: valor combinado com o professor';
       return partes.join(' · ');
     };
     el('preco-1x').textContent = txt('1x');
     el('preco-2x').textContent = txt('2x');
     montarProfessores();
   }
-  document.querySelectorAll('input[name="tipo"], input[name="modalidade"]').forEach(function (r) { r.addEventListener('change', atualizarAluno); });
+  document.querySelectorAll('input[name="tipo"], input[name="modalidade"], input[name="tipoaula"]').forEach(function (r) { r.addEventListener('change', atualizarAluno); });
+  el('professor').addEventListener('change', montarTurmas);
 
   el('form-cadastro').addEventListener('submit', function (e) {
     e.preventDefault();
@@ -332,7 +374,10 @@
     }
     ok = marcar('c-modalidade', !mods.length) && ok;
     ok = marcar('c-tipo', !tipo) && ok;
+    var tipoAula = valorRadio('tipoaula'), turma = valorRadio('turma');
     if (tipo === 'aluno') {
+      ok = marcar('c-tipoaula', !tipoAula) && ok;
+      if (tipoAula === 'turma' && prof && prof !== 'outro') ok = marcar('c-turma', !turma) && ok;
       ok = marcar('c-frequencia', !freq) && ok;
       ok = marcar('c-professor', !prof) && ok;
     }
@@ -377,6 +422,7 @@
         nome: nome, cpf: cpf, celular: celular, email: email || null, data_nascimento: nascimento,
         responsavel_nome: menor ? respNome : null, responsavel_cpf: menor ? respCpf : null,
         modalidades: mods, tipo: tipo, frequencia: tipo === 'aluno' ? freq : null,
+        tipo_aula: tipo === 'aluno' ? tipoAula : null, turma_id: (tipo === 'aluno' && tipoAula === 'turma' && turma && turma !== 'outra') ? Number(turma) : null,
         professor_id: profId, professor: profNome,
         rosto_na_catraca: rosto,
         parq: parq, parq_alerta: algumSim, parq_obs: el('parq-obs').value.trim() || null,
@@ -396,7 +442,7 @@
     });
   });
   // Ao corrigir um campo, some o aviso vermelho dele.
-  ['input', 'change'].forEach(function (ev) {
+  ['input', 'change'].forEach(function (ev) { /* limpa erro */
     el('form-cadastro').addEventListener(ev, function (e) {
       var c = e.target.closest('.campo, .parq-item');
       if (c) c.classList.remove('invalido');
