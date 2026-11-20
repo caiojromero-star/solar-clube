@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Painel — Solar Clube</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<style>
+  :root { --azul-1:#144D9E; --azul-2:#255BA5; --amarelo:#FEB705; --marinho:#0A2864; --fundo:#F3F6FB; --borda:#D8E0EE; --texto:#13213D; --suave:#5B6B88; --ok:#1F8A4C; --alerta:#C2410C; --erro:#B42318; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:"Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif; background:var(--fundo); color:var(--texto); font-size:15px; line-height:1.4; }
+  .titulo { font-family:"Bebas Neue","Arial Narrow",Impact,sans-serif; font-weight:400; letter-spacing:.5px; }
+  header { background:linear-gradient(160deg,var(--azul-1),var(--azul-2)); color:#fff; padding:14px 20px; display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  header h1 { font-size:30px; color:var(--amarelo); line-height:1; }
+  header .usuario { margin-left:auto; font-size:13px; opacity:.9; display:flex; gap:10px; align-items:center; }
+  nav { display:flex; gap:4px; padding:0 20px; background:var(--marinho); overflow-x:auto; }
+  nav button { background:none; border:none; color:#C9D5EC; padding:12px 14px; font:inherit; font-weight:600; cursor:pointer; border-bottom:3px solid transparent; white-space:nowrap; }
+  nav button.ativo { color:#fff; border-color:var(--amarelo); }
+  main { max-width:1200px; margin:0 auto; padding:20px; }
+  .aba { display:none; } .aba.ativa { display:block; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin-bottom:18px; }
+  .card { background:#fff; border:1px solid var(--borda); border-radius:12px; padding:14px; }
+  .card .v { font-size:30px; font-weight:700; color:var(--marinho); line-height:1.1; }
+  .card .l { font-size:13px; color:var(--suave); }
+  .card.alerta .v { color:var(--alerta); }
+  .bloco { background:#fff; border:1px solid var(--borda); border-radius:12px; padding:16px; margin-bottom:16px; }
+  .bloco h2 { font-size:24px; color:var(--marinho); margin-bottom:10px; }
+  .filtros { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; align-items:center; }
+  input, select { font:inherit; padding:8px 10px; border:1px solid var(--borda); border-radius:8px; background:#fff; color:var(--texto); }
+  input[type=checkbox] { padding:0; width:16px; height:16px; }
+  button.b { font:inherit; font-weight:600; padding:8px 14px; border-radius:8px; border:1px solid var(--azul-1); background:var(--azul-1); color:#fff; cursor:pointer; }
+  button.b.sec { background:#fff; color:var(--azul-1); }
+  button.b.peq { padding:4px 10px; font-size:13px; }
+  button.b.perigo { border-color:var(--erro); background:#fff; color:var(--erro); }
+  button.b:disabled { opacity:.5; cursor:default; }
+  .tabela { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th { text-align:left; background:#EEF2F9; color:var(--suave); font-weight:600; padding:8px; border-bottom:1px solid var(--borda); white-space:nowrap; }
+  td { padding:8px; border-bottom:1px solid #EDF1F7; vertical-align:top; }
+  tr.inativo td { opacity:.5; }
+  .tag { display:inline-block; font-size:12px; font-weight:600; padding:2px 8px; border-radius:20px; background:#EEF2F9; color:var(--marinho); margin:1px 2px 1px 0; white-space:nowrap; }
+  .tag.ok { background:#E3F4EA; color:var(--ok); } .tag.al { background:#FDECDF; color:var(--alerta); } .tag.er { background:#FDE7E5; color:var(--erro); }
+  .num { text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums; }
+  .vazio { color:var(--suave); padding:16px 4px; }
+  .grade2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; }
+  .barra { display:flex; align-items:center; gap:8px; margin:5px 0; font-size:14px; }
+  .barra .n { width:150px; flex:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .barra .t { flex:1; height:10px; background:#EEF2F9; border-radius:6px; overflow:hidden; }
+  .barra .t i { display:block; height:100%; background:var(--azul-2); border-radius:6px; }
+  .barra .q { width:34px; text-align:right; font-weight:600; }
+  .form-linha { display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end; }
+  .form-linha label { display:flex; flex-direction:column; gap:3px; font-size:12px; color:var(--suave); font-weight:600; }
+  #login { max-width:380px; margin:60px auto; background:#fff; border:1px solid var(--borda); border-radius:14px; padding:24px; }
+  #login h2 { font-size:30px; color:var(--marinho); margin-bottom:6px; }
+  #login input { width:100%; margin-top:10px; }
+  #login button { width:100%; margin-top:14px; }
+  .msg { margin-top:10px; font-size:14px; color:var(--erro); min-height:20px; }
+  .toast { position:fixed; bottom:18px; left:50%; transform:translateX(-50%); background:var(--marinho); color:#fff; padding:10px 16px; border-radius:10px; font-size:14px; display:none; z-index:9; }
+  .escondido { display:none !important; }
+  .nota { font-size:13px; color:var(--suave); margin-top:8px; }
+  details summary { cursor:pointer; color:var(--azul-1); font-weight:600; font-size:13px; }
+  @media (max-width: 640px) { main { padding:12px; } header { padding:12px; } .barra .n { width:110px; } }
+</style>
+</head>
+<body>
+<header>
+  <h1 class="titulo">SOLAR CLUBE · PAINEL</h1>
+  <div class="usuario escondido" id="usuario"><span id="email-logado"></span><button class="b sec peq" id="sair">Sair</button></div>
+</header>
+
+<section id="login">
+  <h2 class="titulo">ENTRAR</h2>
+  <p class="nota" style="margin-top:0">Acesso restrito à gestão do Solar.</p>
+  <input type="email" id="l-email" placeholder="E-mail" autocomplete="username">
+  <input type="password" id="l-senha" placeholder="Senha" autocomplete="current-password">
+  <button class="b" id="l-entrar">Entrar</button>
+  <div class="msg" id="l-msg"></div>
+</section>
+
+<div id="app" class="escondido">
+  <nav>
+    <button data-aba="resumo" class="ativo">Resumo</button>
+    <button data-aba="pessoas">Pessoas</button>
+    <button data-aba="recebimentos">Recebimentos do Solar</button>
+    <button data-aba="repasses">Repasse dos professores</button>
+    <button data-aba="professores">Professores</button>
+  </nav>
+  <main>
+    <div class="filtros" style="justify-content:flex-end">
+      <label style="font-size:13px;color:var(--suave);font-weight:600">Mês de referência
+        <input type="month" id="mes"></label>
+      <button class="b sec peq" id="recarregar">Atualizar</button>
+    </div>
+
+    <!-- RESUMO -->
+    <section class="aba ativa" id="aba-resumo">
+      <div class="cards" id="cards"></div>
+      <div class="grade2">
+        <div class="bloco"><h2 class="titulo">ALUNOS POR PROFESSOR</h2><div id="g-prof"></div></div>
+        <div class="bloco"><h2 class="titulo">PESSOAS POR MODALIDADE</h2><div id="g-mod"></div></div>
+        <div class="bloco"><h2 class="titulo">PENDÊNCIAS</h2><div id="pendencias"></div></div>
+        <div class="bloco"><h2 class="titulo">DINHEIRO DO MÊS</h2><div id="financeiro"></div></div>
+      </div>
+    </section>
+
+    <!-- PESSOAS -->
+    <section class="aba" id="aba-pessoas">
+      <div class="bloco">
+        <div class="filtros">
+          <input type="search" id="f-busca" placeholder="Buscar nome, CPF ou celular" style="flex:1;min-width:200px">
+          <select id="f-tipo"><option value="">Todos os tipos</option><option value="aluno">Alunos</option><option value="clubista">Clubistas</option><option value="ranking_tenis">Ranking tênis</option><option value="dayuse">Day use</option></select>
+          <select id="f-mod"><option value="">Todas as modalidades</option><option value="beach">Beach tennis</option><option value="tenis">Tênis de campo</option><option value="funcional">Funcional</option></select>
+          <select id="f-prof"><option value="">Todos os professores</option></select>
+          <select id="f-pend"><option value="">Sem filtro de pendência</option><option value="parq">PAR-Q com SIM</option><option value="rosto">Rosto não cadastrado</option><option value="semprof">Aluno sem professor</option></select>
+          <label style="font-size:13px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="f-inativos"> mostrar inativos</label>
+          <button class="b sec peq" id="exportar">Exportar CSV</button>
+        </div>
+        <div class="tabela"><table><thead><tr><th>Nome</th><th>Tipo</th><th>Modalidade</th><th>Professor</th><th>Contato</th><th>Idade</th><th>Saúde / termos</th><th>Cadastro</th><th></th></tr></thead><tbody id="t-pessoas"></tbody></table></div>
+        <p class="nota" id="n-pessoas"></p>
+      </div>
+    </section>
+
+    <!-- RECEBIMENTOS -->
+    <section class="aba" id="aba-recebimentos">
+      <div class="bloco">
+        <h2 class="titulo">LANÇAR RECEBIMENTO</h2>
+        <div class="form-linha">
+          <label>Tipo<select id="r-tipo">
+            <option value="clubista">Clubista (R$ 55)</option><option value="dayuse_beach">Day use beach (R$ 30)</option><option value="dayuse_tenis">Day use tênis (R$ 50)</option>
+            <option value="ranking_tenis">Ranking tênis (R$ 50)</option><option value="locacao">Locação (R$ 100/h)</option><option value="aula_experimental">Aula experimental (R$ 30)</option>
+            <option value="raquete">Raquete (R$ 20)</option><option value="evento">Evento</option><option value="outro">Outro</option></select></label>
+          <label>Pessoa cadastrada<select id="r-pessoa" style="min-width:220px"></select></label>
+          <label>ou nome (sem cadastro)<input id="r-nome" placeholder="Ex.: day use avulso"></label>
+          <label>Valor (R$)<input id="r-valor" type="number" step="0.01" min="0" style="width:110px"></label>
+          <label>Status<select id="r-status"><option value="paga">Pago</option><option value="pendente">Pendente</option></select></label>
+          <label>Data do pagamento<input id="r-data" type="date"></label>
+          <label>Observação<input id="r-obs" style="width:180px"></label>
+          <button class="b" id="r-salvar">Lançar</button>
+        </div>
+        <p class="nota">O lançamento entra no mês de referência escolhido no topo.</p>
+      </div>
+      <div class="bloco">
+        <h2 class="titulo">CLUBISTAS SEM PAGAMENTO NO MÊS</h2>
+        <div id="clubistas-aberto"></div>
+      </div>
+      <div class="bloco">
+        <h2 class="titulo">RECEBIMENTOS DO MÊS</h2>
+        <div class="tabela"><table><thead><tr><th>Data</th><th>Tipo</th><th>Quem</th><th class="num">Valor</th><th>Status</th><th>Obs.</th><th></th></tr></thead><tbody id="t-receb"></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- REPASSES -->
+    <section class="aba" id="aba-repasses">
+      <div class="bloco">
+        <h2 class="titulo">REPASSE DO MÊS</h2>
+        <p class="nota" style="margin:-4px 0 10px">Lance quanto cada professor recebeu dos alunos no mês. O sistema calcula o repasse ao Solar pela regra do professor. "Alunos no cadastro" ajuda a conferir o que ele informou.</p>
+        <div class="tabela"><table><thead><tr><th>Professor</th><th>Fica com ele</th><th class="num">Alunos no cadastro</th><th>Alunos informados</th><th>Valor recebido (R$)</th><th class="num">Repasse ao Solar</th><th>Status</th><th>Pago em</th><th></th></tr></thead><tbody id="t-repasses"></tbody></table></div>
+        <p class="nota" id="n-repasses"></p>
+      </div>
+    </section>
+
+    <!-- PROFESSORES -->
+    <section class="aba" id="aba-professores">
+      <div class="bloco">
+        <h2 class="titulo">PROFESSORES E REGRA DE REPASSE</h2>
+        <div class="tabela"><table><thead><tr><th>Nome</th><th>Modalidades</th><th>% que fica com o professor</th><th>Telefone</th><th>Ativo</th><th></th></tr></thead><tbody id="t-prof"></tbody></table></div>
+        <div class="form-linha" style="margin-top:14px">
+          <label>Novo professor<input id="p-nome" placeholder="Nome"></label>
+          <label>Modalidades<select id="p-mod"><option value="beach">Beach</option><option value="tenis">Tênis</option><option value="beach,tenis">Beach e tênis</option><option value="funcional">Funcional</option><option value="beach,funcional">Beach e funcional</option></select></label>
+          <label>% fica com ele<input id="p-pct" type="number" min="0" max="100" style="width:90px"></label>
+          <button class="b" id="p-add">Adicionar</button>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+  var SUPABASE_URL = 'https://wpmsbzfwobodcqxkbacw.supabase.co';
+  var SUPABASE_CHAVE_PUBLICA = 'sb_publishable_1QUirZF5fXtURr-qWuM2yQ_yfKVVhTd';
+  var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_CHAVE_PUBLICA);
+
+  var VALOR_PADRAO = { clubista: 55, dayuse_beach: 30, dayuse_tenis: 50, ranking_tenis: 50, locacao: 100, aula_experimental: 30, raquete: 20, evento: '', outro: '' };
+  var NOME_TIPO = { aluno: 'Aluno', clubista: 'Clubista', clubista_aluno: 'Aluno', ranking_tenis: 'Ranking tênis', dayuse: 'Day use' };
+  var NOME_REC = { clubista: 'Clubista', dayuse_beach: 'Day use beach', dayuse_tenis: 'Day use tênis', ranking_tenis: 'Ranking tênis', locacao: 'Locação', aula_experimental: 'Aula experimental', raquete: 'Raquete', evento: 'Evento', outro: 'Outro', aula: 'Aula' };
+  var NOME_MOD = { beach: 'Beach', tenis: 'Tênis', funcional: 'Funcional' };
+  var D = { pessoas: [], professores: [], receb: [], repasses: [] };
+
+  var el = function (id) { return document.getElementById(id); };
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function brl(v) { return (Number(v) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+  function dataBR(s) { if (!s) return ''; var d = String(s).slice(0, 10).split('-'); return d[2] + '/' + d[1] + '/' + d[0]; }
+  function fone(c) { c = String(c || ''); return c.length === 11 ? '(' + c.slice(0, 2) + ') ' + c.slice(2, 7) + '-' + c.slice(7) : c.length === 10 ? '(' + c.slice(0, 2) + ') ' + c.slice(2, 6) + '-' + c.slice(6) : c; }
+  function toast(t) { var x = el('toast'); x.textContent = t; x.style.display = 'block'; clearTimeout(toast._t); toast._t = setTimeout(function () { x.style.display = 'none'; }, 2600); }
+  function competencia() { return el('mes').value + '-01'; }
+  function hoje() { var d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); }
+  function erro(e) { console.error(e); toast('Erro: ' + (e && e.message ? e.message : e)); }
+  function ehAluno(p) { return p.tipo === 'aluno' || p.tipo === 'clubista_aluno'; }
+
+  // ---------- Login ----------
+  async function iniciar() {
+    var s = (await sb.auth.getSession()).data.session;
+    if (s) entrou(s.user); else { el('login').classList.remove('escondido'); el('app').classList.add('escondido'); }
+  }
+  el('l-entrar').onclick = async function () {
+    el('l-msg').textContent = '';
+    var r = await sb.auth.signInWithPassword({ email: el('l-email').value.trim(), password: el('l-senha').value });
+    if (r.error) { el('l-msg').textContent = 'E-mail ou senha inválidos.'; return; }
+    entrou(r.data.user);
+  };
+  el('l-senha').addEventListener('keydown', function (e) { if (e.key === 'Enter') el('l-entrar').click(); });
+  el('sair').onclick = async function () { await sb.auth.signOut(); location.reload(); };
+
+  async function entrou(user) {
+    var ok = await sb.rpc('eh_admin');
+    if (ok.error || !ok.data) {
+      el('l-msg').textContent = 'Este login ainda não tem acesso ao painel. Rode o passo "liberar o seu login" do script 03_controle.sql.';
+      await sb.auth.signOut(); return;
+    }
+    el('login').classList.add('escondido'); el('app').classList.remove('escondido');
+    el('usuario').classList.remove('escondido'); el('email-logado').textContent = user.email;
+    carregar();
+  }
+
+  // ---------- Dados ----------
+  async function carregar() {
+    try {
+      var comp = competencia();
+      var fim = new Date(comp + 'T12:00:00'); fim.setMonth(fim.getMonth() + 1); var compFim = fim.toISOString().slice(0, 10);
+      var res = await Promise.all([
+        sb.from('v_pessoas').select('*').order('nome'),
+        sb.from('professores').select('*').order('nome'),
+        sb.from('cobrancas').select('*').gte('competencia', comp).lt('competencia', compFim).order('criado_em', { ascending: false }),
+        sb.from('repasses').select('*').eq('competencia', comp)
+      ]);
+      res.forEach(function (r) { if (r.error) throw r.error; });
+      D.pessoas = res[0].data; D.professores = res[1].data; D.receb = res[2].data; D.repasses = res[3].data;
+      montarTudo();
+    } catch (e) { erro(e); }
+  }
+  function montarTudo() { montarResumo(); montarFiltroProf(); montarPessoas(); montarReceb(); montarRepasses(); montarProfessores(); }
+
+  // ---------- Resumo ----------
+  function ativos() { return D.pessoas.filter(function (p) { return p.ativo; }); }
+  function montarResumo() {
+    var a = ativos();
+    var alunos = a.filter(ehAluno), clubistas = a.filter(function (p) { return p.tipo === 'clubista'; });
+    var comClubinho = a.filter(function (p) { return p.tem_clubinho; });
+    var ranking = a.filter(function (p) { return p.tipo === 'ranking_tenis'; }), day = a.filter(function (p) { return p.tipo === 'dayuse'; });
+    var parq = a.filter(function (p) { return p.parq_alerta; });
+    var cards = [
+      [alunos.length, 'Alunos'], [clubistas.length, 'Clubistas (só jogo livre)'], [comClubinho.length, 'Com acesso ao clubinho (alunos + clubistas)'],
+      [ranking.length, 'Ranking de tênis'], [day.length, 'Day use cadastrados'], [parq.length, 'PAR-Q com SIM (pedir liberação)', parq.length > 0]
+    ];
+    el('cards').innerHTML = cards.map(function (c) { return '<div class="card' + (c[2] ? ' alerta' : '') + '"><div class="v">' + c[0] + '</div><div class="l">' + c[1] + '</div></div>'; }).join('');
+
+    var porProf = {}; alunos.forEach(function (p) { var k = p.professor_nome || 'Sem professor'; porProf[k] = (porProf[k] || 0) + 1; });
+    el('g-prof').innerHTML = barras(porProf) || '<p class="vazio">Nenhum aluno cadastrado ainda.</p>';
+    var porMod = {}; a.forEach(function (p) { (p.modalidades || []).forEach(function (m) { var k = NOME_MOD[m] || m; porMod[k] = (porMod[k] || 0) + 1; }); });
+    el('g-mod').innerHTML = barras(porMod) || '<p class="vazio">Sem cadastros.</p>';
+
+    var rosto = a.filter(function (p) { return p.rosto_na_catraca !== 'sim'; }).length;
+    var semProf = alunos.filter(function (p) { return !p.professor_id; }).length;
+    var menores = a.filter(function (p) { return p.idade !== null && p.idade < 18; }).length;
+    el('pendencias').innerHTML =
+      linhaPend(parq.length, 'PAR-Q com alguma resposta SIM: pedir liberação médica', 'parq') +
+      linhaPend(rosto, 'Rosto ainda não cadastrado (ou não sabe) na catraca', 'rosto') +
+      linhaPend(semProf, 'Alunos que não indicaram o professor', 'semprof') +
+      '<p class="nota">' + menores + ' menor(es) de 18 anos com responsável informado.</p>';
+
+    var pago = D.receb.filter(function (r) { return r.status === 'paga'; }).reduce(function (s, r) { return s + Number(r.valor); }, 0);
+    var pend = D.receb.filter(function (r) { return r.status === 'pendente'; }).reduce(function (s, r) { return s + Number(r.valor); }, 0);
+    var repPrev = D.repasses.reduce(function (s, r) { return s + Number(r.valor_repasse); }, 0);
+    var repPago = D.repasses.reduce(function (s, r) { return s + (r.status === 'pago' ? Number(r.valor_repasse) : Number(r.valor_pago || 0)); }, 0);
+    var clubAberto = clubistasSemPagamento().length;
+    el('financeiro').innerHTML = '<table><tbody>' +
+      '<tr><td>Recebido direto no Solar</td><td class="num"><b>' + brl(pago) + '</b></td></tr>' +
+      '<tr><td>Lançado como pendente</td><td class="num">' + brl(pend) + '</td></tr>' +
+      '<tr><td>Repasse dos professores (calculado)</td><td class="num">' + brl(repPrev) + '</td></tr>' +
+      '<tr><td>Repasse já recebido</td><td class="num"><b>' + brl(repPago) + '</b></td></tr>' +
+      '<tr><td><b>Total que entrou no Solar</b></td><td class="num"><b>' + brl(pago + repPago) + '</b></td></tr>' +
+      '<tr><td>Clubistas sem pagamento lançado</td><td class="num">' + clubAberto + ' (' + brl(clubAberto * 55) + ')</td></tr>' +
+      '</tbody></table>';
+  }
+  function barras(obj) {
+    var k = Object.keys(obj).sort(function (a, b) { return obj[b] - obj[a]; }); if (!k.length) return '';
+    var max = obj[k[0]];
+    return k.map(function (n) { return '<div class="barra"><span class="n" title="' + esc(n) + '">' + esc(n) + '</span><span class="t"><i style="width:' + (obj[n] / max * 100) + '%"></i></span><span class="q">' + obj[n] + '</span></div>'; }).join('');
+  }
+  function linhaPend(n, txt, filtro) {
+    return '<div class="barra"><span class="tag ' + (n ? 'al' : 'ok') + '">' + n + '</span><span style="flex:1">' + txt + '</span>' + (n ? '<button class="b sec peq" onclick="verPend(\'' + filtro + '\')">Ver</button>' : '') + '</div>';
+  }
+  window.verPend = function (f) { el('f-pend').value = f; abrir('pessoas'); montarPessoas(); };
+
+  // ---------- Pessoas ----------
+  function montarFiltroProf() {
+    var atual = el('f-prof').value;
+    el('f-prof').innerHTML = '<option value="">Todos os professores</option>' + D.professores.map(function (p) { return '<option value="' + p.id + '">' + esc(p.nome) + '</option>'; }).join('');
+    el('f-prof').value = atual;
+  }
+  function filtradas() {
+    var b = el('f-busca').value.trim().toLowerCase(), bd = b.replace(/\D/g, '');
+    var t = el('f-tipo').value, m = el('f-mod').value, pr = el('f-prof').value, pe = el('f-pend').value, ina = el('f-inativos').checked;
+    return D.pessoas.filter(function (p) {
+      if (!ina && !p.ativo) return false;
+      if (b && !(p.nome.toLowerCase().indexOf(b) >= 0 || (bd && (p.cpf.indexOf(bd) >= 0 || p.celular.indexOf(bd) >= 0)))) return false;
+      if (t === 'aluno' && !ehAluno(p)) return false;
+      if (t && t !== 'aluno' && p.tipo !== t) return false;
+      if (m && (p.modalidades || []).indexOf(m) < 0) return false;
+      if (pr && String(p.professor_id) !== pr) return false;
+      if (pe === 'parq' && !p.parq_alerta) return false;
+      if (pe === 'rosto' && p.rosto_na_catraca === 'sim') return false;
+      if (pe === 'semprof' && !(ehAluno(p) && !p.professor_id)) return false;
+      return true;
+    });
+  }
+  function montarPessoas() {
+    var lista = filtradas();
+    el('t-pessoas').innerHTML = lista.map(function (p) {
+      var termos = [];
+      termos.push(p.parq_alerta ? '<span class="tag al" title="' + esc(p.parq_obs || '') + '">PAR-Q: SIM</span>' : '<span class="tag ok">PAR-Q ok</span>');
+      if (p.parq_obs) termos.push('<span class="tag" title="' + esc(p.parq_obs) + '">obs. saúde</span>');
+      termos.push(p.rosto_na_catraca === 'sim' ? '<span class="tag ok">rosto ok</span>' : '<span class="tag al">rosto pendente</span>');
+      if (p.autoriza_imagem === false) termos.push('<span class="tag er">sem uso de imagem</span>');
+      var tipo = NOME_TIPO[p.tipo] || p.tipo; if (ehAluno(p) && p.frequencia) tipo += ' ' + p.frequencia;
+      return '<tr class="' + (p.ativo ? '' : 'inativo') + '"><td><b>' + esc(p.nome) + '</b>' + (p.responsavel_nome ? '<br><small>Resp.: ' + esc(p.responsavel_nome) + '</small>' : '') + '</td>' +
+        '<td>' + esc(tipo) + '</td><td>' + (p.modalidades || []).map(function (m) { return '<span class="tag">' + (NOME_MOD[m] || m) + '</span>'; }).join('') + '</td>' +
+        '<td>' + esc(p.professor_nome || (ehAluno(p) ? '—' : '')) + '</td>' +
+        '<td><a href="https://wa.me/55' + esc(p.celular) + '" target="_blank" rel="noopener">' + fone(p.celular) + '</a>' + (p.email ? '<br><small>' + esc(p.email) + '</small>' : '') + '</td>' +
+        '<td>' + (p.idade == null ? '' : p.idade) + '</td><td>' + termos.join('') + '</td><td>' + dataBR(p.criado_em) + '</td>' +
+        '<td><button class="b sec peq" onclick="alternarAtivo(\'' + p.id + '\',' + !p.ativo + ')">' + (p.ativo ? 'Desativar' : 'Reativar') + '</button></td></tr>';
+    }).join('') || '<tr><td colspan="9" class="vazio">Nenhuma pessoa com esses filtros.</td></tr>';
+    el('n-pessoas').textContent = lista.length + ' pessoa(s). Cada CPF aparece uma vez, com o cadastro mais recente. "Desativar" tira a pessoa da contagem sem apagar o histórico.';
+  }
+  window.alternarAtivo = async function (id, valor) {
+    var r = await sb.from('cadastros').update({ ativo: valor }).eq('id', id);
+    if (r.error) return erro(r.error); toast(valor ? 'Reativado.' : 'Desativado.'); carregar();
+  };
+  ['f-busca', 'f-tipo', 'f-mod', 'f-prof', 'f-pend', 'f-inativos'].forEach(function (id) { el(id).addEventListener('input', montarPessoas); el(id).addEventListener('change', montarPessoas); });
+  el('exportar').onclick = function () {
+    var cols = ['nome', 'cpf', 'celular', 'email', 'idade', 'tipo', 'frequencia', 'modalidades', 'professor_nome', 'parq_alerta', 'parq_obs', 'rosto_na_catraca', 'autoriza_imagem', 'responsavel_nome', 'ativo', 'criado_em'];
+    var linhas = [cols.join(';')].concat(filtradas().map(function (p) { return cols.map(function (c) { var v = p[c]; if (Array.isArray(v)) v = v.join(','); return '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"'; }).join(';'); }));
+    var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + linhas.join('\n')], { type: 'text/csv;charset=utf-8' }));
+    a.download = 'pessoas-solar-' + el('mes').value + '.csv'; a.click();
+  };
+
+  // ---------- Recebimentos ----------
+  function montarReceb() {
+    var sel = el('r-pessoa'), atual = sel.value;
+    sel.innerHTML = '<option value="">—</option>' + ativos().map(function (p) { return '<option value="' + p.id + '">' + esc(p.nome) + ' (' + (NOME_TIPO[p.tipo] || p.tipo) + ')</option>'; }).join('');
+    sel.value = atual;
+    var nomes = {}; D.pessoas.forEach(function (p) { nomes[p.id] = p.nome; });
+    el('t-receb').innerHTML = D.receb.map(function (r) {
+      return '<tr><td>' + dataBR(r.pago_em || r.criado_em) + '</td><td>' + (NOME_REC[r.tipo] || r.tipo) + '</td><td>' + esc(nomes[r.cadastro_id] || r.nome_avulso || '') + '</td>' +
+        '<td class="num">' + brl(r.valor) + '</td><td>' + (r.status === 'paga' ? '<span class="tag ok">Pago</span>' : '<span class="tag al">' + esc(r.status) + '</span>') + '</td><td>' + esc(r.observacao || '') + '</td>' +
+        '<td style="white-space:nowrap">' + (r.status !== 'paga' ? '<button class="b sec peq" onclick="marcarPago(\'' + r.id + '\')">Marcar pago</button> ' : '') +
+        '<button class="b perigo peq" onclick="apagarReceb(\'' + r.id + '\')">Excluir</button></td></tr>';
+    }).join('') || '<tr><td colspan="7" class="vazio">Nada lançado neste mês.</td></tr>';
+    var abertos = clubistasSemPagamento();
+    el('clubistas-aberto').innerHTML = abertos.length ? '<div class="tabela"><table><tbody>' + abertos.map(function (p) {
+      return '<tr><td>' + esc(p.nome) + '</td><td><a href="https://wa.me/55' + esc(p.celular) + '" target="_blank" rel="noopener">' + fone(p.celular) + '</a></td><td><button class="b peq" onclick="pagarClubista(\'' + p.id + '\')">Lançar R$ 55 pago hoje</button></td></tr>';
+    }).join('') + '</tbody></table></div>' : '<p class="vazio">Todos os clubistas ativos têm pagamento lançado neste mês.</p>';
+  }
+  function clubistasSemPagamento() {
+    var pagos = {}; D.receb.forEach(function (r) { if (r.tipo === 'clubista' && r.status === 'paga' && r.cadastro_id) pagos[r.cadastro_id] = 1; });
+    return ativos().filter(function (p) { return p.tipo === 'clubista' && !pagos[p.id]; });
+  }
+  el('r-tipo').onchange = function () { el('r-valor').value = VALOR_PADRAO[this.value]; };
+  el('r-status').onchange = function () { el('r-data').value = this.value === 'paga' ? hoje() : ''; };
+  el('r-salvar').onclick = async function () {
+    var valor = Number(el('r-valor').value), pessoa = el('r-pessoa').value || null, nome = el('r-nome').value.trim() || null;
+    if (!(valor > 0)) return toast('Informe o valor.');
+    if (!pessoa && !nome) return toast('Escolha a pessoa ou escreva um nome.');
+    var st = el('r-status').value;
+    var r = await sb.from('cobrancas').insert({ tipo: el('r-tipo').value, cadastro_id: pessoa, nome_avulso: pessoa ? null : nome, valor: valor, competencia: competencia(),
+      status: st, pago_em: st === 'paga' ? (el('r-data').value || hoje()) + 'T12:00:00-03:00' : null, observacao: el('r-obs').value.trim() || null, forma: 'pix' });
+    if (r.error) return erro(r.error);
+    el('r-nome').value = ''; el('r-obs').value = ''; el('r-pessoa').value = ''; toast('Lançado.'); carregar();
+  };
+  window.pagarClubista = async function (id) {
+    var r = await sb.from('cobrancas').insert({ tipo: 'clubista', cadastro_id: id, valor: 55, competencia: competencia(), status: 'paga', pago_em: hoje() + 'T12:00:00-03:00', forma: 'pix' });
+    if (r.error) return erro(r.error); toast('Pagamento lançado.'); carregar();
+  };
+  window.marcarPago = async function (id) {
+    var r = await sb.from('cobrancas').update({ status: 'paga', pago_em: hoje() + 'T12:00:00-03:00' }).eq('id', id);
+    if (r.error) return erro(r.error); carregar();
+  };
+  window.apagarReceb = async function (id) {
+    if (!confirm('Excluir este lançamento?')) return;
+    var r = await sb.from('cobrancas').delete().eq('id', id); if (r.error) return erro(r.error); carregar();
+  };
+
+  // ---------- Repasses ----------
+  function montarRepasses() {
+    var alunosPorProf = {}; ativos().filter(ehAluno).forEach(function (p) { if (p.professor_id) alunosPorProf[p.professor_id] = (alunosPorProf[p.professor_id] || 0) + 1; });
+    var rep = {}; D.repasses.forEach(function (r) { rep[r.professor_id] = r; });
+    var tot = 0, totPago = 0;
+    el('t-repasses').innerHTML = D.professores.filter(function (p) { return p.ativo || rep[p.id]; }).map(function (p) {
+      var r = rep[p.id] || {}; var pct = r.pct_professor != null ? Number(r.pct_professor) : Number(p.pct_professor);
+      var valorRec = r.valor_recebido != null ? r.valor_recebido : '';
+      var repasse = r.valor_repasse != null ? Number(r.valor_repasse) : 0; tot += repasse; if (r.status === 'pago') totPago += repasse;
+      var semRepasse = pct >= 100;
+      return '<tr data-prof="' + p.id + '"><td><b>' + esc(p.nome) + '</b></td><td>' + pct + '%</td><td class="num">' + (alunosPorProf[p.id] || 0) + '</td>' +
+        '<td><input type="number" min="0" class="i-alunos" value="' + (r.alunos_informados != null ? r.alunos_informados : '') + '" style="width:70px"' + (semRepasse ? ' disabled' : '') + '></td>' +
+        '<td><input type="number" min="0" step="0.01" class="i-valor" value="' + valorRec + '" style="width:120px"' + (semRepasse ? ' disabled' : '') + ' oninput="previa(this,' + pct + ')"></td>' +
+        '<td class="num"><b class="o-rep">' + (semRepasse ? '—' : brl(repasse)) + '</b></td>' +
+        '<td><select class="i-status"' + (semRepasse ? ' disabled' : '') + '><option value="pendente"' + (r.status === 'pendente' || !r.status ? ' selected' : '') + '>Pendente</option><option value="pago"' + (r.status === 'pago' ? ' selected' : '') + '>Pago</option></select></td>' +
+        '<td><input type="date" class="i-data" value="' + (r.pago_em || '') + '"' + (semRepasse ? ' disabled' : '') + '></td>' +
+        '<td>' + (semRepasse ? '<small>Sem repasse</small>' : '<button class="b peq" onclick="salvarRepasse(' + p.id + ',' + pct + ',this)">Salvar</button>') + '</td></tr>';
+    }).join('');
+    el('n-repasses').textContent = 'Repasse calculado no mês: ' + brl(tot) + ' · já recebido: ' + brl(totPago) + ' · em aberto: ' + brl(tot - totPago) + '.';
+  }
+  window.previa = function (inp, pct) { var v = Number(inp.value) || 0; inp.closest('tr').querySelector('.o-rep').textContent = brl(Math.round(v * (100 - pct)) / 100); };
+  window.salvarRepasse = async function (profId, pct, btn) {
+    var tr = btn.closest('tr'); var valor = Number(tr.querySelector('.i-valor').value);
+    if (!(valor >= 0) || tr.querySelector('.i-valor').value === '') return toast('Informe o valor recebido pelo professor.');
+    var st = tr.querySelector('.i-status').value, data = tr.querySelector('.i-data').value || (st === 'pago' ? hoje() : null);
+    var al = tr.querySelector('.i-alunos').value;
+    var r = await sb.from('repasses').upsert({ professor_id: profId, competencia: competencia(), valor_recebido: valor, pct_professor: pct,
+      alunos_informados: al === '' ? null : Number(al), status: st, pago_em: st === 'pago' ? data : null }, { onConflict: 'professor_id,competencia' });
+    if (r.error) return erro(r.error); toast('Repasse salvo.'); carregar();
+  };
+
+  // ---------- Professores ----------
+  function montarProfessores() {
+    el('t-prof').innerHTML = D.professores.map(function (p) {
+      return '<tr><td><b>' + esc(p.nome) + '</b></td><td>' + (p.modalidades || []).map(function (m) { return '<span class="tag">' + (NOME_MOD[m] || m) + '</span>'; }).join('') + '</td>' +
+        '<td><input type="number" min="0" max="100" value="' + Number(p.pct_professor) + '" style="width:80px" id="pct-' + p.id + '"> <small>repassa ' + (100 - Number(p.pct_professor)) + '%</small></td>' +
+        '<td><input value="' + esc(p.telefone || '') + '" id="tel-' + p.id + '" style="width:140px"></td>' +
+        '<td><input type="checkbox" id="atv-' + p.id + '"' + (p.ativo ? ' checked' : '') + '></td>' +
+        '<td><button class="b sec peq" onclick="salvarProf(' + p.id + ')">Salvar</button></td></tr>';
+    }).join('');
+  }
+  window.salvarProf = async function (id) {
+    var pct = Number(el('pct-' + id).value); if (!(pct >= 0 && pct <= 100)) return toast('Percentual entre 0 e 100.');
+    var r = await sb.from('professores').update({ pct_professor: pct, telefone: el('tel-' + id).value.trim() || null, ativo: el('atv-' + id).checked }).eq('id', id);
+    if (r.error) return erro(r.error); toast('Professor atualizado. Repasses já salvos mantêm a regra da época.'); carregar();
+  };
+  el('p-add').onclick = async function () {
+    var nome = el('p-nome').value.trim(), pct = Number(el('p-pct').value);
+    if (!nome || el('p-pct').value === '' || !(pct >= 0 && pct <= 100)) return toast('Preencha nome e percentual.');
+    var r = await sb.from('professores').insert({ nome: nome, modalidades: el('p-mod').value.split(','), pct_professor: pct });
+    if (r.error) return erro(r.error); el('p-nome').value = ''; el('p-pct').value = ''; toast('Professor adicionado.'); carregar();
+  };
+
+  // ---------- Navegação ----------
+  function abrir(aba) {
+    document.querySelectorAll('nav button').forEach(function (b) { b.classList.toggle('ativo', b.dataset.aba === aba); });
+    document.querySelectorAll('.aba').forEach(function (s) { s.classList.toggle('ativa', s.id === 'aba-' + aba); });
+  }
+  document.querySelectorAll('nav button').forEach(function (b) { b.onclick = function () { abrir(b.dataset.aba); }; });
+  el('mes').value = hoje().slice(0, 7);
+  el('mes').onchange = carregar; el('recarregar').onclick = carregar;
+  el('r-valor').value = VALOR_PADRAO.clubista; el('r-data').value = hoje();
+  iniciar();
+</script>
+</body>
+</html>
