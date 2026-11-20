@@ -86,6 +86,7 @@
     <button data-aba="pessoas">Pessoas</button>
     <button data-aba="recebimentos">Recebimentos do Solar</button>
     <button data-aba="repasses">Repasse dos professores</button>
+    <button data-aba="agenda">Agenda do tênis</button>
     <button data-aba="professores">Professores</button>
   </nav>
   <main>
@@ -162,6 +163,41 @@
       </div>
     </section>
 
+    <!-- AGENDA -->
+    <section class="aba" id="aba-agenda">
+      <div class="bloco">
+        <h2 class="titulo">RESERVAS DAS QUADRAS DE TÊNIS</h2>
+        <p class="nota" style="margin:-4px 0 10px">Próximos 14 dias. "Aguardando Pix" some sozinho se não for confirmado em 12 horas. Link público da agenda: <a href="../agenda/" target="_blank">abrir agenda</a></p>
+        <div class="tabela"><table><thead><tr><th>Dia</th><th>Hora</th><th>Quadra</th><th>Quem</th><th>Tipo</th><th>Status</th><th></th></tr></thead><tbody id="t-reservas"></tbody></table></div>
+      </div>
+      <div class="bloco">
+        <h2 class="titulo">AULAS FIXAS (BLOQUEIAM A QUADRA TODA SEMANA)</h2>
+        <div class="tabela"><table><thead><tr><th>Dia</th><th>Horário</th><th>Quadra</th><th>Professor</th><th>Descrição</th><th></th></tr></thead><tbody id="t-aulas"></tbody></table></div>
+        <div class="form-linha" style="margin-top:14px">
+          <label>Dia<select id="a-dia"><option value="1">Segunda</option><option value="2">Terça</option><option value="3">Quarta</option><option value="4">Quinta</option><option value="5">Sexta</option><option value="6">Sábado</option><option value="0">Domingo</option></select></label>
+          <label>Início<input type="time" id="a-ini" value="08:00" step="3600"></label>
+          <label>Fim<input type="time" id="a-fim" value="09:00" step="3600"></label>
+          <label>Quadra<select id="a-quadra"><option>T1</option><option>T2</option><option value="ambas">T1 e T2</option></select></label>
+          <label>Professor<select id="a-prof"></select></label>
+          <label>Descrição (opcional)<input id="a-desc" placeholder="Ex.: turma iniciante" style="width:170px"></label>
+          <button class="b" id="a-add">Adicionar aula</button>
+        </div>
+      </div>
+      <div class="bloco">
+        <h2 class="titulo">BLOQUEAR UM DIA OU HORÁRIO</h2>
+        <p class="nota" style="margin:-4px 0 10px">Para feriado, manutenção, evento ou ranking.</p>
+        <div class="form-linha">
+          <label>Data<input type="date" id="b-data"></label>
+          <label>Início<input type="time" id="b-ini" value="06:00" step="3600"></label>
+          <label>Fim<input type="time" id="b-fim" value="23:00" step="3600"></label>
+          <label>Quadra<select id="b-quadra"><option value="">T1 e T2</option><option>T1</option><option>T2</option></select></label>
+          <label>Motivo<input id="b-motivo" placeholder="Ex.: Feriado" style="width:160px"></label>
+          <button class="b" id="b-add">Bloquear</button>
+        </div>
+        <div class="tabela" style="margin-top:12px"><table><tbody id="t-bloq"></tbody></table></div>
+      </div>
+    </section>
+
     <!-- PROFESSORES -->
     <section class="aba" id="aba-professores">
       <div class="bloco">
@@ -235,14 +271,17 @@
         sb.from('v_pessoas').select('*').order('nome'),
         sb.from('professores').select('*').order('nome'),
         sb.from('cobrancas').select('*').gte('competencia', comp).lt('competencia', compFim).order('criado_em', { ascending: false }),
-        sb.from('repasses').select('*').eq('competencia', comp)
+        sb.from('repasses').select('*').eq('competencia', comp),
+        sb.from('reservas').select('*').gte('data', hoje()).lte('data', somaDias(hoje(), 14)).neq('status', 'cancelada').order('data').order('hora'),
+        sb.from('quadra_aulas').select('*').eq('ativo', true).order('dia_semana').order('inicio'),
+        sb.from('quadra_bloqueios').select('*').gte('data', hoje()).order('data')
       ]);
       res.forEach(function (r) { if (r.error) throw r.error; });
-      D.pessoas = res[0].data; D.professores = res[1].data; D.receb = res[2].data; D.repasses = res[3].data;
+      D.pessoas = res[0].data; D.professores = res[1].data; D.receb = res[2].data; D.repasses = res[3].data; D.reservas = res[4].data; D.aulas = res[5].data; D.bloq = res[6].data;
       montarTudo();
     } catch (e) { erro(e); }
   }
-  function montarTudo() { montarResumo(); montarFiltroProf(); montarPessoas(); montarReceb(); montarRepasses(); montarProfessores(); }
+  function montarTudo() { montarResumo(); montarFiltroProf(); montarPessoas(); montarReceb(); montarRepasses(); montarProfessores(); montarAgenda(); }
 
   // ---------- Resumo ----------
   function ativos() { return D.pessoas.filter(function (p) { return p.ativo; }); }
@@ -445,6 +484,56 @@
     if (!nome || el('p-pct').value === '' || !(pct >= 0 && pct <= 100)) return toast('Preencha nome e percentual.');
     var r = await sb.from('professores').insert({ nome: nome, modalidades: el('p-mod').value.split(','), pct_professor: pct });
     if (r.error) return erro(r.error); el('p-nome').value = ''; el('p-pct').value = ''; toast('Professor adicionado.'); carregar();
+  };
+
+  // ---------- Agenda do tênis ----------
+  var DIAS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+  var CAT = { aluno_tenis: 'Aluno de tênis', ranking: 'Ranking', dayuse: 'Day use R$ 50' };
+  function somaDias(iso, n) { var d = new Date(iso + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+  function dowISO(iso) { return new Date(iso + 'T12:00:00Z').getUTCDay(); }
+  function ativa(r) { return r.status === 'confirmada' || (r.status === 'aguardando_pix' && (Date.now() - new Date(r.criado_em).getTime()) < 12 * 3600 * 1000); }
+  function montarAgenda() {
+    var nomesProf = {}; D.professores.forEach(function (p) { nomesProf[p.id] = p.nome; });
+    el('a-prof').innerHTML = '<option value="">—</option>' + D.professores.filter(function (p) { return p.ativo && (p.modalidades || []).indexOf('tenis') >= 0; }).map(function (p) { return '<option value="' + p.id + '">' + esc(p.nome) + '</option>'; }).join('');
+    var rs = (D.reservas || []).filter(ativa);
+    el('t-reservas').innerHTML = rs.map(function (r) {
+      return '<tr><td>' + DIAS[dowISO(r.data)].slice(0, 3) + ' ' + dataBR(r.data) + '</td><td>' + r.hora.slice(0, 5) + '</td><td><b>' + r.quadra + '</b></td>' +
+        '<td>' + esc(r.nome) + '<br><a href="https://wa.me/55' + esc(r.celular || '') + '" target="_blank" rel="noopener">' + fone(r.celular) + '</a></td><td>' + (CAT[r.categoria] || r.categoria) + '</td>' +
+        '<td>' + (r.status === 'confirmada' ? '<span class="tag ok">Confirmada</span>' : '<span class="tag al">Aguardando Pix</span>') + '</td>' +
+        '<td style="white-space:nowrap">' + (r.status === 'aguardando_pix' ? '<button class="b peq" onclick="confirmarPix(\'' + r.id + '\')">Pix recebido</button> ' : '') +
+        '<button class="b perigo peq" onclick="cancelarReserva(\'' + r.id + '\')">Cancelar</button></td></tr>';
+    }).join('') || '<tr><td colspan="7" class="vazio">Nenhuma reserva nos próximos 14 dias.</td></tr>';
+    el('t-aulas').innerHTML = (D.aulas || []).map(function (a) {
+      return '<tr><td>' + DIAS[a.dia_semana] + '</td><td>' + a.inicio.slice(0, 5) + ' às ' + a.fim.slice(0, 5) + '</td><td><b>' + a.quadra + '</b></td><td>' + esc(nomesProf[a.professor_id] || '—') + '</td><td>' + esc(a.descricao || '') + '</td>' +
+        '<td><button class="b perigo peq" onclick="removerAula(' + a.id + ')">Remover</button></td></tr>';
+    }).join('') || '<tr><td colspan="6" class="vazio">Nenhuma aula cadastrada. Cadastre as aulas de tênis abaixo para elas aparecerem bloqueadas na agenda.</td></tr>';
+    el('t-bloq').innerHTML = (D.bloq || []).map(function (b) {
+      return '<tr><td>' + dataBR(b.data) + '</td><td>' + b.inicio.slice(0, 5) + ' às ' + b.fim.slice(0, 5) + '</td><td>' + (b.quadra || 'T1 e T2') + '</td><td>' + esc(b.motivo || '') + '</td><td><button class="b perigo peq" onclick="removerBloqueio(' + b.id + ')">Remover</button></td></tr>';
+    }).join('');
+  }
+  window.confirmarPix = async function (id) {
+    var r = (D.reservas || []).filter(function (x) { return x.id === id; })[0]; if (!r) return;
+    var u = await sb.from('reservas').update({ status: 'confirmada' }).eq('id', id);
+    if (u.error) return erro(u.error.message.indexOf('reservas_sem_duplicar') >= 0 ? 'Esse horário já foi confirmado para outra pessoa.' : u.error);
+    await sb.from('cobrancas').insert({ tipo: 'dayuse_tenis', cadastro_id: r.cadastro_id, valor: r.valor || 50, competencia: r.data.slice(0, 7) + '-01', status: 'paga', pago_em: hoje() + 'T12:00:00-03:00', forma: 'pix', observacao: 'Reserva ' + r.quadra + ' ' + dataBR(r.data) + ' ' + r.hora.slice(0, 5) });
+    toast('Reserva confirmada e day use lançado nos recebimentos.'); carregar();
+  };
+  window.cancelarReserva = async function (id) {
+    if (!confirm('Cancelar esta reserva? Avise a pessoa pelo WhatsApp.')) return;
+    var u = await sb.from('reservas').update({ status: 'cancelada', cancelada_por: 'gestao' }).eq('id', id); if (u.error) return erro(u.error); carregar();
+  };
+  window.removerAula = async function (id) { if (!confirm('Remover esta aula da agenda?')) return; var u = await sb.from('quadra_aulas').update({ ativo: false }).eq('id', id); if (u.error) return erro(u.error); carregar(); };
+  window.removerBloqueio = async function (id) { var u = await sb.from('quadra_bloqueios').delete().eq('id', id); if (u.error) return erro(u.error); carregar(); };
+  el('a-add').onclick = async function () {
+    var ini = el('a-ini').value, fim = el('a-fim').value; if (!ini || !fim || fim <= ini) return toast('Confira o horário de início e fim.');
+    var qs = el('a-quadra').value === 'ambas' ? ['T1', 'T2'] : [el('a-quadra').value];
+    var linhas = qs.map(function (q) { return { quadra: q, dia_semana: Number(el('a-dia').value), inicio: ini, fim: fim, professor_id: el('a-prof').value ? Number(el('a-prof').value) : null, descricao: el('a-desc').value.trim() || null }; });
+    var u = await sb.from('quadra_aulas').insert(linhas); if (u.error) return erro(u.error); el('a-desc').value = ''; toast('Aula adicionada.'); carregar();
+  };
+  el('b-add').onclick = async function () {
+    if (!el('b-data').value) return toast('Escolha a data.');
+    var u = await sb.from('quadra_bloqueios').insert({ data: el('b-data').value, inicio: el('b-ini').value || '06:00', fim: el('b-fim').value || '23:00', quadra: el('b-quadra').value || null, motivo: el('b-motivo').value.trim() || null });
+    if (u.error) return erro(u.error); el('b-motivo').value = ''; toast('Bloqueado.'); carregar();
   };
 
   // ---------- Navegação ----------
